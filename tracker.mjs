@@ -1,144 +1,173 @@
-// Rohlik keyword tracker. Reads every config/*.json, measures anonymously (3 passes, pinned warehouse),
-// appends to history/*.csv and writes out/summary_<config>.md for the GitHub issue (= email to work inbox).
+// Rohlik keyword tracker v5 (GitHub). Same metrics as the Mac rk_engine v5:
+// organic rank (target + controls), top10/30/100, share of search top 10, weighted share top 30 (1/log2(pos+1)),
+// top competitor brands, ads, autocomplete (product tile / brand phrase), prefix test on head terms, low-results flag.
+// Reads every active config/*.json, writes history/<name>_*.csv and out/summary_<name>.md (GitHub issue -> email).
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 
-const PASSES = 3;
-const GAP_MS = Number(process.env.GAP_MS ?? 1200); // polite spacing between requests
-const LIMIT = 200;              // results fetched per query
-const NOT_FOUND = 999;
+const PASSES = 3, LIMIT = 200, TOP = 100;
+const GAP_MS = Number(process.env.GAP_MS ?? 1100);
 const BASE = 'https://www.rohlik.cz/services/frontend-service';
-const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
-  'Accept': 'application/json', 'Accept-Language': 'cs-CZ,cs;q=0.9', 'Referer': 'https://www.rohlik.cz/',
-};
-const HIST_COLS = ['date','run','client','sku','role','keyword','group','rank_med','rank_p1','rank_p2','rank_p3','found','bucket',
-  'hits','sos_top10','sponsored_top','in_autocomplete','in_stock','on_sale','multipack'];
-
+const HEADERS = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+  'Accept': 'application/json', 'Accept-Language': 'cs-CZ,cs;q=0.9', 'Referer': 'https://www.rohlik.cz/' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' }); // YYYY-MM-DD
+const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
 const RUN = process.env.GITHUB_RUN_NUMBER || 'local';
-const median = a => { const b = [...a].sort((x, y) => x - y); return b[Math.floor(b.length / 2)]; };
+const median = a => { const b = a.filter(x => x != null).sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : null; };
+const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0;
+const r3 = x => x == null ? '' : Math.round(x * 1000) / 1000;
 const csv = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-const bucket = r => r === NOT_FOUND ? 'not_found' : r <= 10 ? 'top10' : r <= 30 ? '11-30' : '31+';
+const W = pos => 1 / Math.log2(pos + 1); // 1. = 1.00, 2. = 0.63, 10. = 0.29, 30. = 0.20
+let calls = 0;
 
-async function getJson(url, tries = 3) {
-  for (let i = 1; i <= tries; i++) {
-    try {
-      const res = await fetch(url, { headers: HEADERS });
-      if (res.ok) return await res.json();
-      console.log(`HTTP ${res.status} (try ${i}) ${url.split('?')[0]}`);
+async function getJson(url) {
+  for (let i = 1; i <= 3; i++) {
+    try { const res = await fetch(url, { headers: HEADERS }); calls++;
+      if (res.ok) { await sleep(GAP_MS); return await res.json(); }
+      console.log(`HTTP ${res.status} (try ${i})`); if (res.status === 403 || res.status === 429) await sleep(30000 * i);
     } catch (e) { console.log(`ERR ${e} (try ${i})`); }
     await sleep(5000 * i);
   }
   throw new Error('Rohlik request failed 3x — stopping so no partial week is recorded');
 }
+const search = (q, wh) => getJson(`${BASE}/search-metadata?search=${encodeURIComponent(q)}&offset=0&limit=${LIMIT}&companyId=1&warehouseId=${wh}`).then(j => j.data ?? {});
+const autocomplete = (q, wh) => getJson(`${BASE}/autocomplete?search=${encodeURIComponent(q)}&referer=whisperer&companyId=1&warehouseId=${wh}`).then(j => j.data ?? j);
 
 function parseCsv(text) {
   const rows = []; let row = [], cell = '', q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
+  for (let i = 0; i < text.length; i++) { const c = text[i];
     if (q) { if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; }
     else if (c === '"') q = true; else if (c === ',') { row.push(cell); cell = ''; }
-    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; } else if (c !== '\r') cell += c;
-  }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; } else if (c !== '\r') cell += c; }
   if (cell || row.length) { row.push(cell); rows.push(row); }
-  const [head, ...body] = rows; return body.filter(r => r.length > 1).map(r => Object.fromEntries(head.map((h, i) => [h, r[i]])));
+  const [h, ...b] = rows; return b.filter(r => r.length > 1).map(r => Object.fromEntries(h.map((k, i) => [k, r[i]])));
+}
+function appendCsv(path, cols, rows) {
+  if (!existsSync(path)) writeFileSync(path, cols.join(',') + '\n');
+  if (rows.length) appendFileSync(path, rows.map(r => cols.map(c => csv(r[c])).join(',')).join('\n') + '\n');
 }
 
-async function measureKeyword(kw, cfg) {
-  const passes = [];
-  for (let p = 0; p < PASSES; p++) {
-    const q = encodeURIComponent(kw);
-    const s = (await getJson(`${BASE}/search-metadata?search=${q}&offset=0&limit=${LIMIT}&companyId=1&warehouseId=${cfg.warehouse_id}`)).data ?? {};
-    await sleep(GAP_MS);
-    const a = await getJson(`${BASE}/autocomplete?search=${q}&referer=whisperer&companyId=1&warehouseId=${cfg.warehouse_id}`);
-    await sleep(GAP_MS);
-    const list = s.productList ?? [];
-    const organic = list.filter(x => x.productPromotionType !== 'SPONSORED');
-    const rankOf = id => { const i = organic.findIndex(x => x.productId === id); return i < 0 ? NOT_FOUND : i + 1; };
-    const sp = list.find(x => x.productPromotionType === 'SPONSORED');
-    const ad = a.data ?? a;
-    passes.push({
-      hits: s.totalHits ?? 0,
-      target: rankOf(cfg.target_sku), control: cfg.control_sku ? rankOf(cfg.control_sku) : null,
-      sos: organic.slice(0, 10).filter(x => (x.productName || '').toLowerCase().includes(cfg.brand_token)).length,
-      sponsoredTop: sp ? sp.productName : '',
-      item: list.find(x => x.productId === cfg.target_sku) || null,
-      inAc: (ad.productIds || []).includes(cfg.target_sku),
-      suggestions: (ad.suggestions || []).map(x => typeof x === 'string' ? x : (x.text ?? x.name ?? '')).filter(Boolean),
-    });
+async function runConfig(name, cfg) {
+  const wh = cfg.warehouse_id, token = cfg.brand_match.toLowerCase();
+  const exclude = new Set(cfg.brand_exclude_ids || []);
+  const ownIds = new Set([cfg.target_sku, ...cfg.controls.map(c => c.id)]);
+  const brandIds = new Set(ownIds);               // every product id seen that belongs to the client brand
+  const brandOf = p => (p.brand || '').trim() || (p.productName || '').split(' ')[0];
+  const isClient = p => !exclude.has(p.productId) && (ownIds.has(p.productId) || (p.brand || '').toLowerCase().includes(token)
+    || new RegExp(`(^|[^a-zá-ž])${token}([^a-zá-ž]|$)`, 'i').test(p.productName || ''));
+  const groupOf = Object.fromEntries(Object.entries(cfg.keywords).flatMap(([g, ks]) => ks.map(k => [k, g])));
+  const allKw = Object.keys(groupOf);
+
+  // ---- per keyword: 3 passes of search + autocomplete
+  const rows = [], brandAcc = {};
+  for (const kw of allKw) {
+    const P = [];
+    for (let p = 0; p < PASSES; p++) {
+      const s = await search(kw, wh), a = await autocomplete(kw, wh);
+      const list = s.productList ?? [];
+      list.filter(isClient).forEach(x => brandIds.add(x.productId));
+      const organic = list.filter(x => x.productPromotionType !== 'SPONSORED');
+      const ads = list.filter(x => x.productPromotionType === 'SPONSORED');
+      const rankOf = id => { const i = organic.findIndex(x => x.productId === id); return i < 0 || i >= TOP ? 0 : i + 1; };
+      const w = {}; let wsum = 0;
+      organic.slice(0, 30).forEach((x, i) => { const b = isClient(x) ? cfg.client : brandOf(x); w[b] = (w[b] || 0) + W(i + 1); wsum += W(i + 1); });
+      Object.keys(w).forEach(b => w[b] /= wsum || 1);
+      const acIds = a.productIds || [], sugg = (a.suggestions || []).map(x => typeof x === 'string' ? x : (x.text ?? x.name ?? ''));
+      P.push({ hits: s.totalHits ?? 0, target: rankOf(cfg.target_sku), controls: cfg.controls.map(c => rankOf(c.id)),
+        sos10: organic.slice(0, 10).filter(isClient).length / 10, w, ads: ads.length, firstAd: ads[0] || null,
+        adBrands: [...new Set(ads.map(x => isClient(x) ? cfg.client : brandOf(x)))],
+        acIds, acSug: sugg.some(t => t.toLowerCase().includes(token)), item: list.find(x => x.productId === cfg.target_sku) || null });
+    }
+    const brands = {}; P.forEach(p => Object.entries(p.w).forEach(([b, v]) => brands[b] = (brands[b] || 0) + v / PASSES));
+    const comp = Object.entries(brands).filter(([b]) => b !== cfg.client).sort((x, y) => y[1] - x[1]);
+    const rankMed = c => { const v = P.map(c); const m = median(v.map(x => x || 999)); return m === 999 ? 0 : m; };
+    const rank = rankMed(p => p.target);
+    const item = P.map(p => p.item).find(Boolean), saleTypes = new Set((item?.sales || []).map(x => x.type));
+    const fa = P.map(p => p.firstAd).find(Boolean);
+    const row = {
+      date: today, run: RUN, keyword: kw, group: groupOf[kw], results: median(P.map(p => p.hits)),
+      rank, top10: rank && rank <= 10 ? 1 : 0, top30: rank && rank <= 30 ? 1 : 0, top100: rank ? 1 : 0,
+      sos10: r3(median(P.map(p => p.sos10))), wsos30: r3(brands[cfg.client] || 0),
+      top_competitor: comp[0]?.[0] || '', top_competitor_share: comp[0] ? r3(comp[0][1]) : '',
+      competitors: comp.slice(0, 5).map(([b, v]) => `${b}:${r3(v)}`).join('|'),
+      ads: median(P.map(p => p.ads)), first_ad: fa ? fa.productName.slice(0, 70) : '', first_ad_brand: fa ? (isClient(fa) ? cfg.client : brandOf(fa)) : '',
+      ad_brands: [...new Set(P.flatMap(p => p.adBrands))].join('|'),
+      ac_tile: P.filter(p => p.acIds.some(id => brandIds.has(id))).length >= 2 ? 1 : 0,
+      ac_target: P.filter(p => p.acIds.includes(cfg.target_sku)).length >= 2 ? 1 : 0,
+      ac_sug: P.filter(p => p.acSug).length >= 2 ? 1 : 0,
+      low_results: median(P.map(p => p.hits)) < 20 ? 1 : 0,
+      in_stock: item ? (item.inStock ? 1 : 0) : '',
+      on_sale: [...saleTypes].some(t => ['sale', 'longtermAction', 'expiration', 'groupDiscount'].includes(t)) ? 1 : 0,
+      multipack: saleTypes.has('multipack') ? 1 : 0,
+    };
+    cfg.controls.forEach((c, i) => row[`control_${c.id}`] = rankMed(p => p.controls[i]));
+    rows.push(row);
+    if (row.group !== 'competitor') Object.entries(brands).forEach(([b, v]) => brandAcc[b] = (brandAcc[b] || 0) + v);
+    console.log(`${name} | ${kw.padEnd(28)} | rank ${String(rank || '–').padStart(3)} | hits ${row.results} | sos10 ${row.sos10} | w30 ${row.wsos30}`);
   }
-  return passes;
+
+  // ---- brand share across current + recommended keywords
+  const core = rows.filter(r => r.group !== 'competitor');
+  const brandRows = Object.entries(brandAcc).map(([b, v]) => ({ date: today, run: RUN, brand: b, is_client: b === cfg.client ? 1 : 0, wsos30: r3(v / core.length) }))
+    .sort((x, y) => y.wsos30 - x.wsos30).slice(0, 12);
+
+  // ---- prefix test: from which typed character autocomplete offers the brand (1 pass)
+  const prefixRows = [];
+  for (const term of cfg.head_terms) {
+    let phrase = 0, tile = 0, ad = 0;
+    for (let n = 1; n <= term.length && !(phrase && tile && ad); n++) {
+      if (term[n - 1] === ' ') continue;
+      const a = await autocomplete(term.slice(0, n), wh);
+      const ids = a.productIds || [], imp = (a.impressions || []).map(x => x.productId ?? x.id ?? x);
+      const sug = (a.suggestions || []).map(x => typeof x === 'string' ? x : (x.text ?? x.name ?? ''));
+      if (!phrase && sug.some(t => t.toLowerCase().includes(token))) phrase = n;
+      if (!tile && ids.some(id => brandIds.has(id))) tile = n;
+      if (!ad && imp.some(id => brandIds.has(id))) ad = n;
+    }
+    const from = [phrase, tile].filter(Boolean).length ? Math.min(...[phrase, tile].filter(Boolean)) : 0;
+    prefixRows.push({ date: today, run: RUN, term, from_char: from, term_length: term.length, phrase_from: phrase, tile_from: tile, ad_from: ad });
+    console.log(`${name} | prefix ${term.padEnd(22)} | from ${from || '–'}`);
+  }
+  return { rows, brandRows, prefixRows };
 }
 
-function rowFor(role, sku, kw, group, cfg, passes, key) {
-  const ranks = passes.map(p => p[key]);
-  const med = median(ranks);
-  const item = passes.map(p => p.item).find(Boolean);
-  const saleTypes = new Set((item?.sales || []).map(s => s.type));
-  return {
-    date: today, run: RUN, client: cfg.client, sku, role, keyword: kw, group,
-    rank_med: med === NOT_FOUND ? '' : med, rank_p1: ranks[0] === NOT_FOUND ? '' : ranks[0],
-    rank_p2: ranks[1] === NOT_FOUND ? '' : ranks[1], rank_p3: ranks[2] === NOT_FOUND ? '' : ranks[2],
-    found: med === NOT_FOUND ? 0 : 1, bucket: bucket(med),
-    hits: median(passes.map(p => p.hits)), sos_top10: median(passes.map(p => p.sos)),
-    sponsored_top: passes.map(p => p.sponsoredTop).find(Boolean) || '',
-    in_autocomplete: role === 'target' ? (passes.filter(p => p.inAc).length >= 2 ? 1 : 0) : '',
-    in_stock: role === 'target' ? (item ? (item.inStock ? 1 : 0) : '') : '',
-    on_sale: role === 'target' ? ([...saleTypes].some(t => ['sale', 'longtermAction', 'expiration', 'groupDiscount'].includes(t)) ? 1 : 0) : '',
-    multipack: role === 'target' ? (saleTypes.has('multipack') ? 1 : 0) : '',
-  };
-}
-
-function summarize(cfg, name, rows, prevHist, newSugg) {
-  const t = rows.filter(r => r.role === 'target');
-  // earlier runs in file order: previous = last earlier run, baseline = first run ever
+// ---------- summary for the issue/email (compact, < 60k chars)
+function summary(cfg, name, rows, brandRows, prefixRows, prevRows) {
   const runKey = r => `${r.date} run ${r.run}`;
-  const runs = [...new Set(prevHist.filter(r => r.client === cfg.client && r.role === 'target').map(runKey))];
-  const prevDate = runs.at(-1), baseDate = runs[0];
-  const lookup = k => Object.fromEntries(prevHist.filter(r => runKey(r) === k && r.role === 'target' && r.client === cfg.client).map(r => [r.keyword, r.rank_med]));
-  const prev = prevDate ? lookup(prevDate) : {}, base = baseDate ? lookup(baseDate) : {};
-  const fmt = v => v === '' || v === undefined ? '–' : v;
-  const delta = (now, then) => (now === '' || then === '' || then === undefined) ? '' : (Number(then) - Number(now)); // + = improved
-  const by = b => t.filter(r => r.bucket === b).length;
-  const lines = [
+  const runs = [...new Set(prevRows.map(runKey))];
+  const pick = k => Object.fromEntries(prevRows.filter(r => runKey(r) === k).map(r => [r.keyword, r]));
+  const prev = runs.length ? pick(runs.at(-1)) : {}, base = runs.length ? pick(runs[0]) : {};
+  const rec = rows.filter(r => r.group === 'recommended'), core = rows.filter(r => r.group !== 'competitor');
+  const avg = f => r3(mean(core.map(r => Number(r[f]) || 0)));
+  const ctl = cfg.controls.map(c => `control_${c.id}`);
+  const head = ['keyword', 'group', 'results', 'rank', 'rank_prev', 'rank_base', ...ctl, 'sos10', 'sos10_prev', 'wsos30', 'wsos30_prev',
+    'top_competitor', 'top_competitor_share', 'competitors', 'ads', 'first_ad_brand', 'first_ad', 'ad_brands', 'ac_tile', 'ac_target', 'ac_sug', 'low_results', 'in_stock', 'on_sale', 'multipack'];
+  const kwLines = rows.map(r => head.map(h => h === 'rank_prev' ? (prev[r.keyword]?.rank ?? '') : h === 'rank_base' ? (base[r.keyword]?.rank ?? '')
+    : h === 'sos10_prev' ? (prev[r.keyword]?.sos10 ?? '') : h === 'wsos30_prev' ? (prev[r.keyword]?.wsos30 ?? '') : r[h]).map(csv).join(','));
+  const out = [
     `## ${cfg.label} (SKU ${cfg.target_sku}) · ${today} · warehouse ${cfg.warehouse_id} · run ${RUN}`,
-    `Found on ${t.filter(r => r.found).length}/${t.length} keywords · top10 ${by('top10')} · 11–30 ${by('11-30')} · 31+ ${by('31+')} · not found ${by('not_found')}`,
-    `Previous run: ${prevDate || 'none (this is the baseline)'} · Baseline: ${baseDate || today}`,
-    '', '```csv',
-    'keyword,group,rank,prev,base,chg_vs_prev,bucket,hits,sos_top10,in_autocomplete,in_stock,on_sale,multipack,control_rank,sponsored_top',
-    ...t.map(r => {
-      const c = rows.find(x => x.role === 'control' && x.keyword === r.keyword);
-      return [r.keyword, r.group, fmt(r.rank_med), fmt(prev[r.keyword]), fmt(base[r.keyword]), delta(r.rank_med, prev[r.keyword]),
-        r.bucket, r.hits, r.sos_top10, r.in_autocomplete, r.in_stock, r.on_sale, r.multipack, c ? fmt(c.rank_med) : '', r.sponsored_top].map(csv).join(',');
-    }),
-    '```', '',
-    newSugg.length ? `New autocomplete suggestions (not in keyword list, first time seen): ${newSugg.join(' · ')}` : 'No new autocomplete suggestions.',
-  ];
-  writeFileSync(`out/summary_${name}.md`, lines.join('\n'));
+    `Recommended visible ${rec.filter(r => r.top100).length}/${rec.length} · top30 ${rec.filter(r => r.top30).length} · top10 ${rec.filter(r => r.top10).length} · ` +
+    `brand sos10 ${avg('sos10')} · brand wsos30 ${avg('wsos30')} · ac tile ${core.filter(r => r.ac_tile).length}/${core.length} · ac phrase ${core.filter(r => r.ac_sug).length}/${core.length} · requests ${calls}`,
+    `Previous: ${runs.at(-1) || 'none (baseline)'} · Baseline: ${runs[0] || 'this run'}`,
+    '', '```csv', head.join(','), ...kwLines, '```',
+    '', '```csv', 'brand,is_client,wsos30', ...brandRows.map(b => [b.brand, b.is_client, b.wsos30].map(csv).join(',')), '```',
+    '', '```csv', 'term,from_char,term_length,phrase_from,tile_from,ad_from', ...prefixRows.map(p => [p.term, p.from_char, p.term_length, p.phrase_from, p.tile_from, p.ad_from].map(csv).join(',')), '```',
+  ].join('\n');
+  writeFileSync(`out/summary_${name}.md`, out.length > 64000 ? out.slice(0, 64000) + '\n…TRUNCATED' : out);
+  console.log(`summary ${name}: ${out.length} chars`);
 }
 
 mkdirSync('history', { recursive: true }); mkdirSync('out', { recursive: true });
 for (const file of readdirSync('config').filter(f => f.endsWith('.json'))) {
-  const name = file.replace(/\.json$/, '');
-  const cfg = JSON.parse(readFileSync(`config/${file}`, 'utf8'));
-  const histPath = `history/${name}.csv`, suggPath = `history/${name}_suggestions.csv`;
-  const prevHist = existsSync(histPath) ? parseCsv(readFileSync(histPath, 'utf8')) : [];
-  const seenSugg = new Set(existsSync(suggPath) ? parseCsv(readFileSync(suggPath, 'utf8')).map(r => r.suggestion) : []);
-  const allKw = Object.values(cfg.keywords).flat();
-  const rows = [], suggNow = new Set();
-  for (const [group, kws] of Object.entries(cfg.keywords)) for (const kw of kws) {
-    const passes = await measureKeyword(kw, cfg);
-    rows.push(rowFor('target', cfg.target_sku, kw, group, cfg, passes, 'target'));
-    if (cfg.control_sku) rows.push(rowFor('control', cfg.control_sku, kw, group, cfg, passes, 'control'));
-    passes.forEach(p => p.suggestions.forEach(s => suggNow.add(s.toLowerCase())));
-    const r = rows.at(cfg.control_sku ? -2 : -1);
-    console.log(`${name} | ${kw.padEnd(22)} | rank ${String(r.rank_med || '–').padStart(3)} | hits ${r.hits} | sos ${r.sos_top10}`);
-  }
-  if (!existsSync(histPath)) writeFileSync(histPath, HIST_COLS.join(',') + '\n');
-  appendFileSync(histPath, rows.map(r => HIST_COLS.map(c => csv(r[c])).join(',')).join('\n') + '\n');
-  const newSugg = [...suggNow].filter(s => !allKw.includes(s) && !seenSugg.has(s)).sort();
-  if (!existsSync(suggPath)) writeFileSync(suggPath, 'date,client,suggestion\n');
-  if (newSugg.length) appendFileSync(suggPath, newSugg.map(s => [today, cfg.client, s].map(csv).join(',')).join('\n') + '\n');
-  summarize(cfg, name, rows, prevHist, newSugg);
+  const name = file.replace(/\.json$/, ''), cfg = JSON.parse(readFileSync(`config/${file}`, 'utf8'));
+  if (cfg.active === false) { console.log(`skip ${name} (inactive)`); continue; }
+  if (!cfg.controls) continue; // old v1 config format
+  const kp = `history/${name}_keywords.csv`;
+  const prevRows = existsSync(kp) ? parseCsv(readFileSync(kp, 'utf8')) : [];
+  const { rows, brandRows, prefixRows } = await runConfig(name, cfg);
+  const kcols = ['date', 'run', 'keyword', 'group', 'results', 'rank', ...cfg.controls.map(c => `control_${c.id}`), 'top10', 'top30', 'top100', 'sos10', 'wsos30',
+    'top_competitor', 'top_competitor_share', 'competitors', 'ads', 'first_ad_brand', 'first_ad', 'ad_brands', 'ac_tile', 'ac_target', 'ac_sug', 'low_results', 'in_stock', 'on_sale', 'multipack'];
+  appendCsv(kp, kcols, rows);
+  appendCsv(`history/${name}_brands.csv`, ['date', 'run', 'brand', 'is_client', 'wsos30'], brandRows);
+  appendCsv(`history/${name}_prefixes.csv`, ['date', 'run', 'term', 'from_char', 'term_length', 'phrase_from', 'tile_from', 'ad_from'], prefixRows);
+  summary(cfg, name, rows, brandRows, prefixRows, prevRows);
 }
