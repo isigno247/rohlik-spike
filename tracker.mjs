@@ -1,6 +1,7 @@
 // Rohlik keyword tracker v5 (GitHub). Same metrics as the Mac rk_engine v5:
 // organic rank (target + controls), top10/30/100, share of search top 10, weighted share top 30 (1/log2(pos+1)),
 // top competitor brands, ads, autocomplete (product tile / brand phrase), prefix test on head terms, low-results flag.
+// v5.1: shared keywords measured once for all configs, 3rd pass skipped when passes 1+2 agree, canary check, products without brand = 'bez značky'.
 // Reads every active config/*.json, writes history/<name>_*.csv and out/summary_<name>.md (GitHub issue -> email).
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 
@@ -18,6 +19,10 @@ const r3 = x => x == null ? '' : Math.round(x * 1000) / 1000;
 const csv = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 const W = pos => 1 / Math.log2(pos + 1); // 1. = 1.00, 2. = 0.63, 10. = 0.29, 30. = 0.20
 let calls = 0;
+const NOBRAND = 'bez značky';
+const cache = new Map();           // `${warehouse}|${keyword}` -> raw passes, shared by all configs
+const tracked = new Set();          // every target/control id of every active config
+let skipped3 = 0;
 
 async function getJson(url) {
   for (let i = 1; i <= 3; i++) {
@@ -46,12 +51,33 @@ function appendCsv(path, cols, rows) {
   if (rows.length) appendFileSync(path, rows.map(r => cols.map(c => csv(r[c])).join(',')).join('\n') + '\n');
 }
 
+// raw search+autocomplete passes for one keyword, cached across configs; 3rd pass only when passes 1 and 2 disagree
+async function measureRaw(kw, wh) {
+  const key = `${wh}|${kw}`; if (cache.has(key)) return cache.get(key);
+  const sig = s => { const org = (s.productList ?? []).filter(x => x.productPromotionType !== 'SPONSORED').map(x => x.productId);
+    return org.slice(0, 30).join(',') + '#' + [...tracked].map(id => { const i = org.indexOf(id); return i < 0 || i >= TOP ? 0 : i + 1; }).join(','); };
+  const raw = [];
+  for (let p = 0; p < PASSES; p++) {
+    if (p === 2 && sig(raw[0].s) === sig(raw[1].s)) { skipped3++; break; }
+    raw.push({ s: await search(kw, wh), a: await autocomplete(kw, wh) });
+  }
+  cache.set(key, raw); return raw;
+}
+// canary: if Rohlik changes its API, fail loudly instead of recording "not found" everywhere
+async function canary(cfg) {
+  const c = cfg.canary || { query: cfg.brand_match, min_results: 5, must_find: cfg.target_sku };
+  const s = await search(c.query, cfg.warehouse_id), list = s.productList ?? [];
+  if ((s.totalHits ?? 0) < c.min_results || !list.some(x => x.productId === c.must_find && x.productName))
+    throw new Error(`CANARY FAILED for ${cfg.label}: "${c.query}" returned ${s.totalHits ?? 0} results / target ${c.must_find} ${list.some(x => x.productId === c.must_find) ? 'found' : 'NOT found'} — Rohlik API may have changed`);
+  console.log(`canary ok: "${c.query}" ${s.totalHits} results, target found`);
+}
+
 async function runConfig(name, cfg) {
   const wh = cfg.warehouse_id, token = cfg.brand_match.toLowerCase();
   const exclude = new Set(cfg.brand_exclude_ids || []);
   const ownIds = new Set([cfg.target_sku, ...cfg.controls.map(c => c.id)]);
   const brandIds = new Set(ownIds);               // every product id seen that belongs to the client brand
-  const brandOf = p => (p.brand || '').trim() || (p.productName || '').split(' ')[0];
+  const brandOf = p => (p.brand || '').trim() || NOBRAND;
   const isClient = p => !exclude.has(p.productId) && (ownIds.has(p.productId) || (p.brand || '').toLowerCase().includes(token)
     || new RegExp(`(^|[^a-zá-ž])${token}([^a-zá-ž]|$)`, 'i').test(p.productName || ''));
   const groupOf = Object.fromEntries(Object.entries(cfg.keywords).flatMap(([g, ks]) => ks.map(k => [k, g])));
@@ -60,9 +86,9 @@ async function runConfig(name, cfg) {
   // ---- per keyword: 3 passes of search + autocomplete
   const rows = [], brandAcc = {};
   for (const kw of allKw) {
+    const raw = await measureRaw(kw, wh);
     const P = [];
-    for (let p = 0; p < PASSES; p++) {
-      const s = await search(kw, wh), a = await autocomplete(kw, wh);
+    for (const { s, a } of raw) {
       const list = s.productList ?? [];
       list.filter(isClient).forEach(x => brandIds.add(x.productId));
       const organic = list.filter(x => x.productPromotionType !== 'SPONSORED');
@@ -77,8 +103,8 @@ async function runConfig(name, cfg) {
         adBrands: [...new Set(ads.map(x => isClient(x) ? cfg.client : brandOf(x)))],
         acIds, acSug: sugg.some(t => t.toLowerCase().includes(token)), item: list.find(x => x.productId === cfg.target_sku) || null });
     }
-    const brands = {}; P.forEach(p => Object.entries(p.w).forEach(([b, v]) => brands[b] = (brands[b] || 0) + v / PASSES));
-    const comp = Object.entries(brands).filter(([b]) => b !== cfg.client).sort((x, y) => y[1] - x[1]);
+    const brands = {}; P.forEach(p => Object.entries(p.w).forEach(([b, v]) => brands[b] = (brands[b] || 0) + v / P.length));
+    const comp = Object.entries(brands).filter(([b]) => b !== cfg.client && b !== NOBRAND).sort((x, y) => y[1] - x[1]);
     const rankMed = c => { const v = P.map(c); const m = median(v.map(x => x || 999)); return m === 999 ? 0 : m; };
     const rank = rankMed(p => p.target);
     const item = P.map(p => p.item).find(Boolean), saleTypes = new Set((item?.sales || []).map(x => x.type));
@@ -107,7 +133,7 @@ async function runConfig(name, cfg) {
 
   // ---- brand share across current + recommended keywords
   const core = rows.filter(r => r.group !== 'competitor');
-  const brandRows = Object.entries(brandAcc).map(([b, v]) => ({ date: today, run: RUN, brand: b, is_client: b === cfg.client ? 1 : 0, wsos30: r3(v / core.length) }))
+  const brandRows = Object.entries(brandAcc).filter(([b]) => b !== NOBRAND).map(([b, v]) => ({ date: today, run: RUN, brand: b, is_client: b === cfg.client ? 1 : 0, wsos30: r3(v / core.length) }))
     .sort((x, y) => y.wsos30 - x.wsos30).slice(0, 12);
 
   // ---- prefix test: from which typed character autocomplete offers the brand (1 pass)
@@ -146,21 +172,29 @@ function summary(cfg, name, rows, brandRows, prefixRows, prevRows) {
   const out = [
     `## ${cfg.label} (SKU ${cfg.target_sku}) · ${today} · warehouse ${cfg.warehouse_id} · run ${RUN}`,
     `Recommended visible ${rec.filter(r => r.top100).length}/${rec.length} · top30 ${rec.filter(r => r.top30).length} · top10 ${rec.filter(r => r.top10).length} · ` +
-    `brand sos10 ${avg('sos10')} · brand wsos30 ${avg('wsos30')} · ac tile ${core.filter(r => r.ac_tile).length}/${core.length} · ac phrase ${core.filter(r => r.ac_sug).length}/${core.length} · requests ${calls}`,
+    `brand sos10 ${avg('sos10')} · brand wsos30 ${avg('wsos30')} · ac tile ${core.filter(r => r.ac_tile).length}/${core.length} · ac phrase ${core.filter(r => r.ac_sug).length}/${core.length} · requests ${calls} (3rd pass skipped ${skipped3}×, shared keywords reused)`,
     `Previous: ${runs.at(-1) || 'none (baseline)'} · Baseline: ${runs[0] || 'this run'}`,
     '', '```csv', head.join(','), ...kwLines, '```',
     '', '```csv', 'brand,is_client,wsos30', ...brandRows.map(b => [b.brand, b.is_client, b.wsos30].map(csv).join(',')), '```',
     '', '```csv', 'term,from_char,term_length,phrase_from,tile_from,ad_from', ...prefixRows.map(p => [p.term, p.from_char, p.term_length, p.phrase_from, p.tile_from, p.ad_from].map(csv).join(',')), '```',
   ].join('\n');
-  writeFileSync(`out/summary_${name}.md`, out.length > 64000 ? out.slice(0, 64000) + '\n…TRUNCATED' : out);
+  if (out.length <= 60000) writeFileSync(`out/summary_${name}.md`, out);
+  else { // too long for one email: split the keyword table, every part keeps the header lines
+    const top = out.split('\n').slice(0, 3).join('\n'), tail = out.slice(out.indexOf('```csv\nbrand,'));
+    const parts = []; let cur = [];
+    for (const l of kwLines) { if ((cur.join('\n').length + l.length) > 50000) { parts.push(cur); cur = []; } cur.push(l); } parts.push(cur);
+    parts.forEach((p, i) => writeFileSync(`out/summary_${name}${i ? '-part' + (i + 1) : ''}.md`,
+      [top, `Part ${i + 1}/${parts.length}`, '', '```csv', head.join(','), ...p, '```', ...(i === parts.length - 1 ? ['', tail] : [])].join('\n')));
+  }
   console.log(`summary ${name}: ${out.length} chars`);
 }
 
 mkdirSync('history', { recursive: true }); mkdirSync('out', { recursive: true });
-for (const file of readdirSync('config').filter(f => f.endsWith('.json'))) {
-  const name = file.replace(/\.json$/, ''), cfg = JSON.parse(readFileSync(`config/${file}`, 'utf8'));
-  if (cfg.active === false) { console.log(`skip ${name} (inactive)`); continue; }
-  if (!cfg.controls) continue; // old v1 config format
+const configs = readdirSync('config').filter(f => f.endsWith('.json')).map(f => [f.replace(/\.json$/, ''), JSON.parse(readFileSync(`config/${f}`, 'utf8'))])
+  .filter(([n, c]) => { if (c.active === false || !c.controls) { console.log(`skip ${n}`); return false; } return true; });
+configs.forEach(([, c]) => [c.target_sku, ...c.controls.map(x => x.id)].forEach(id => tracked.add(id)));
+for (const [, cfg] of configs) await canary(cfg);
+for (const [name, cfg] of configs) {
   const kp = `history/${name}_keywords.csv`;
   const prevRows = existsSync(kp) ? parseCsv(readFileSync(kp, 'utf8')) : [];
   const { rows, brandRows, prefixRows } = await runConfig(name, cfg);
