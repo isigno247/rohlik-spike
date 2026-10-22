@@ -1,0 +1,26 @@
+{
+  "active": true,
+  "client": "Birell",
+  "label": "Birell 0.0 Vitality Mango & Citrón",
+  "short": "Mango & Citrón",
+  "target_sku": 1438192,
+  "controls": [
+    {
+      "id": 1469181,
+      "label": "Citrus & Zázvor"
+    },
+    {
+      "id": 732997,
+      "label": "Malina & Limetka"
+    }
+  ],
+  "brand_match": "birell",
+  "brand_exclude_ids": [],
+  "warehouse_id": 8791,
+  "head_terms": ["birell", "nealko pivo", "nealkoholické pivo", "pivo bez alkoholu", "ochucené pivo", "ovocné pivo", "radler", "pivo 0.0", "pivo mango", "pivo citron", "nealko pivo plech", "pivo s příchutí"],
+  "keywords": {
+    "current": ["birell", "chlazené", "mkt_birellactive", "přivezeme chlazené", "studené pití", "vozíme chlazené", "vychlazené"],
+    "recommended": ["nealko pivo", "nealkoholické pivo", "pivo nealkoholické", "pivo bez alkoholu", "ochucené pivo", "ovocné pivo", "ovocné pivo nealko", "nealko radler", "pivo nealko plech", "birell nealkoholické", "nealkoholické pivo birell", "pivo birell", "birell plech", "birell plech nealko", "birell na plech", "beer alcohol free", "grilování nealko pivo", "léto nealko pivo", "párty nealko pivo", "piknik nealko pivo", "oslava nealko pivo", "oběd nealko pivo", "sport nealko pivo", "po sportu nealko pivo", "řidič nealko pivo", "festival nealko pivo", "mango s pivem", "citron s pivem", "džus s pivem", "limonáda s pivem", "pivo s džusem", "pivo s limonádou", "pivo s ovocem", "nealko pivo k jídlu", "pivo k grilování", "pivo na léto", "nealko pivo po sportu", "nealko pro řidiče", "pivo pro řidiče", "nealko pivo mango", "mangové pivo", "pivo mango", "radler mango", "pivo s příchutí manga", "nealko pivo citron", "citronové pivo", "pivo citron", "radler citron", "nealko pivo mango citrón", "pivo s méně cukru", "nealko pivo s méně cukru", "pivo s nízkým obsahem cukru", "ochucené nealko pivo", "nealkoholické pivo ochucené", "ovocné nealko pivo", "nealko pivo s příchutí", "pivo s příchutí", "nealko pivo plech", "nealko pivo plechovka", "nealko pivo multipack", "nealko pivo 4 pack", "nealko pivo 0,5", "pivo 0.0", "nealko 0.0", "nealko pivo zero", "studené pivo", "chlazené pivo", "vychlazené nealko", "birell mango", "birell citron", "birell vitality", "non alcoholic beer", "alcohol free beer", "mango beer", "flavoured beer", "zero alcohol beer", "grilování pivo", "léto pivo", "piknik pivo", "koupaliště pivo", "řidiči pivo", "léto osvěžení", "grilování osvěžení", "nealkoholické", "pivo plech", "plechovka pivo", "pivo 0,0", "pivo v plechu", "drink z piva", "pivní koktejl", "birel", "birrel", "pivný nápoj"],
+    "competitor": ["cool osvěžení", "cool drink", "holba nealko piva", "nealko bez opice", "pivo bez opice", "nealko bez kocoura", "pivo bez kocoura", "beer o clock"]
+  }
+}
