@@ -1,0 +1,45 @@
+name: Rohlik tracker
+on:
+  schedule:
+    - cron: '0 4 * * 1'   # Mondays 04:00 UTC = 05:00 Prague (winter) / 06:00 (summer)
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  issues: write
+concurrency: tracker
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Measure
+        run: node tracker.mjs
+      - name: Save history to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history
+          git commit -m "Tracker results ${{ github.run_number }}" || echo "nothing to commit"
+          git push
+      - name: Post summary as an issue (GitHub emails it to you)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for f in out/summary_*.md; do
+            name=$(basename "$f" .md | sed 's/^summary_//')
+            gh issue create --repo "${{ github.repository }}" \
+              --title "[rohlik-tracker] ${name} $(TZ=Europe/Prague date +%F) run ${{ github.run_number }}" \
+              --body-file "$f"
+          done
+      - name: Report failure by issue too
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --repo "${{ github.repository }}" \
+            --title "[rohlik-tracker] FAILED run ${{ github.run_number }}" \
+            --body "The tracker run failed. Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
