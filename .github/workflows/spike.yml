@@ -1,6 +1,9 @@
 name: Rohlik spike
 on:
   workflow_dispatch: {}
+permissions:
+  contents: read
+  issues: write
 jobs:
   spike:
     runs-on: ubuntu-latest
@@ -16,3 +19,18 @@ jobs:
         with:
           name: rohlik-spike-result
           path: result.json
+      - name: Post results as an issue (GitHub emails it to you)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "Automated Rohlik keyword measurement (Chrášťany, warehouse 8791). Run #${{ github.run_number }}."
+            echo
+            echo '```json'
+            jq -c . result.json | head -c 60000
+            echo
+            echo '```'
+          } > body.md
+          gh issue create --repo "${{ github.repository }}" \
+            --title "[rohlik-tracker] results ${{ github.run_number }}" \
+            --body-file body.md
