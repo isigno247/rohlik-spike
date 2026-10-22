@@ -1,0 +1,73 @@
+date,run,client,sku,role,keyword,group,rank_med,rank_p1,rank_p2,rank_p3,found,bucket,hits,sos_top10,sponsored_top,in_autocomplete,in_stock,on_sale,multipack
+2026-10-22,1,Birell,1457711,target,pivo,current,95,97,95,95,1,31+,432,0,"Guinness Draught Stout plech 4×0,44 l",0,1,0,0
+2026-10-22,1,Birell,732997,control,pivo,current,182,182,182,181,1,31+,432,0,"Guinness Draught Stout plech 4×0,44 l",,,,
+2026-10-22,1,Birell,1457711,target,pivko,current,173,173,174,171,1,31+,379,0,Guinness Draught Stout 0.0% plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,pivko,current,,,,,0,not_found,379,0,Guinness Draught Stout 0.0% plech,,,,
+2026-10-22,1,Birell,1457711,target,piva,current,186,186,188,186,1,31+,420,0,Braník Pivo výčepní světlé PET,0,1,0,0
+2026-10-22,1,Birell,732997,control,piva,current,,,,,0,not_found,420,0,Braník Pivo výčepní světlé PET,,,,
+2026-10-22,1,Birell,1457711,target,pivečko,current,14,14,14,14,1,11-30,43,0,"Mustang Hořký 4×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,pivečko,current,,,,,0,not_found,43,0,"Mustang Hořký 4×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,birell,current,19,20,19,19,1,11-30,21,10,"Birell 0.0 Energy Zelený čaj & Broskev nealkoholické pivo s kofeinem 4×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,birell,current,18,19,18,18,1,11-30,21,10,"Birell 0.0 Energy Zelený čaj & Broskev nealkoholické pivo s kofeinem 4×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,ovocné pivo,current,14,14,13,14,1,11-30,78,3,"Proud pivo ležák ochucený 6×0,33 l sklo",0,1,0,0
+2026-10-22,1,Birell,732997,control,ovocné pivo,current,32,33,32,32,1,31+,78,3,"Proud pivo ležák ochucený 6×0,33 l sklo",,,,
+2026-10-22,1,Birell,1457711,target,citrusové pivo,current,3,3,3,3,1,top10,29,2,"Birell 0. 0 Malina & Limetka nealkoholické pivo 4×0,33 l plech",1,1,0,0
+2026-10-22,1,Birell,732997,control,citrusové pivo,current,,,,,0,not_found,29,2,"Birell 0. 0 Malina & Limetka nealkoholické pivo 4×0,33 l plech",,,,
+2026-10-22,1,Birell,1457711,target,kofein,current,27,27,27,27,1,11-30,77,0,Red Bull Green curuba a bezový květ,0,1,0,0
+2026-10-22,1,Birell,732997,control,kofein,current,,,,,0,not_found,77,0,Red Bull Green curuba a bezový květ,,,,
+2026-10-22,1,Birell,1457711,target,pivo s kofeinem,current,1,1,1,1,1,top10,26,1,Montaña Café La Naturiña filtr/espresso bezkofeinová zrnková káva,1,1,0,0
+2026-10-22,1,Birell,732997,control,pivo s kofeinem,current,,,,,0,not_found,26,1,Montaña Café La Naturiña filtr/espresso bezkofeinová zrnková káva,,,,
+2026-10-22,1,Birell,1457711,target,prazdroj,current,4,4,4,4,1,top10,12,2,"Birell 0.0 Energy Zelený čaj & Broskev nealkoholické pivo s kofeinem 4×0,5 l plech",1,1,0,0
+2026-10-22,1,Birell,732997,control,prazdroj,current,,,,,0,not_found,12,2,"Birell 0.0 Energy Zelený čaj & Broskev nealkoholické pivo s kofeinem 4×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,nealkoholické pivo,recommended,89,89,90,89,1,31+,106,0,Pilsner Urquell Pivo světlý ležák,0,1,0,0
+2026-10-22,1,Birell,732997,control,nealkoholické pivo,recommended,90,90,91,90,1,31+,106,0,Pilsner Urquell Pivo světlý ležák,,,,
+2026-10-22,1,Birell,1457711,target,nealko pivo,recommended,84,85,84,84,1,31+,108,1,Guinness Draught Stout 0.0% plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,nealko pivo,recommended,57,58,57,57,1,31+,108,1,Guinness Draught Stout 0.0% plech,,,,
+2026-10-22,1,Birell,1457711,target,ochucené nealko pivo,recommended,40,40,40,40,1,31+,62,1,Mattoni Nealko drink G&T plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,ochucené nealko pivo,recommended,7,7,7,7,1,top10,62,1,Mattoni Nealko drink G&T plech,,,,
+2026-10-22,1,Birell,1457711,target,pivo 0.0,recommended,29,29,28,30,1,11-30,142,2,Guinness Draught Stout 0.0% plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,pivo 0.0,recommended,32,32,31,33,1,31+,142,2,Guinness Draught Stout 0.0% plech,,,,
+2026-10-22,1,Birell,1457711,target,pivo nealko plech,recommended,48,47,49,48,1,31+,85,1,Mattoni Nealko drink mojito plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,pivo nealko plech,recommended,55,54,56,55,1,31+,85,1,Mattoni Nealko drink mojito plech,,,,
+2026-10-22,1,Birell,1457711,target,prazdroj nealko,recommended,25,25,25,24,1,11-30,28,2,Guinness Draught Stout 0.0% plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,prazdroj nealko,recommended,,,,,0,not_found,28,2,Guinness Draught Stout 0.0% plech,,,,
+2026-10-22,1,Birell,1457711,target,nealko pivo grep,recommended,12,11,12,12,1,11-30,31,1,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,nealko pivo grep,recommended,,,,,0,not_found,31,1,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,grepové pivo,recommended,9,10,9,9,1,top10,25,2,Pilsner Urquell Pivo světlý ležák,0,1,0,0
+2026-10-22,1,Birell,732997,control,grepové pivo,recommended,,,,,0,not_found,25,2,Pilsner Urquell Pivo světlý ležák,,,,
+2026-10-22,1,Birell,1457711,target,grapefruitové pivo,recommended,9,9,9,9,1,top10,26,2,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,grapefruitové pivo,recommended,,,,,0,not_found,26,2,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,radler grep,recommended,18,17,18,18,1,11-30,20,1,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,radler grep,recommended,,,,,0,not_found,20,1,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,nealko radler,recommended,37,37,36,37,1,31+,48,3,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,nealko radler,recommended,30,31,30,30,1,11-30,48,3,"Birell 0.0 Pomelo & Grep nealkoholické pivo 6×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,alcohol free beer,recommended,,,,,0,not_found,26,1,"Velkopopovický Kozel Nealkoholické pivo Citron a Bezový květ 4×0,5l  plech",0,,0,0
+2026-10-22,1,Birell,732997,control,alcohol free beer,recommended,,,,,0,not_found,26,1,"Velkopopovický Kozel Nealkoholické pivo Citron a Bezový květ 4×0,5l  plech",,,,
+2026-10-22,1,Birell,1457711,target,non alcoholic beer,recommended,61,61,60,61,1,31+,71,1,Guinness Draught Stout 0.0% plech,0,1,0,0
+2026-10-22,1,Birell,732997,control,non alcoholic beer,recommended,56,56,56,57,1,31+,71,1,Guinness Draught Stout 0.0% plech,,,,
+2026-10-22,1,Birell,1457711,target,pivo pro řidiče,recommended,,,,,0,not_found,26,1,Pilsner Urquell Pivo světlý ležák,0,,0,0
+2026-10-22,1,Birell,732997,control,pivo pro řidiče,recommended,,,,,0,not_found,26,1,Pilsner Urquell Pivo světlý ležák,,,,
+2026-10-22,1,Birell,1457711,target,pivo po sportu,recommended,,,,,0,not_found,25,0,Velkopopovický Kozel Řezaný,0,,0,0
+2026-10-22,1,Birell,732997,control,pivo po sportu,recommended,,,,,0,not_found,25,0,Velkopopovický Kozel Řezaný,,,,
+2026-10-22,1,Birell,1457711,target,plzeňský prazdroj,recommended,,,,,0,not_found,45,3,"Pilsner Urquell Pivo ležák světlý 6×0,33 l sklo",0,,0,0
+2026-10-22,1,Birell,732997,control,plzeňský prazdroj,recommended,,,,,0,not_found,45,3,"Pilsner Urquell Pivo ležák světlý 6×0,33 l sklo",,,,
+2026-10-22,1,Birell,1457711,target,multipack pivo,recommended,61,61,61,60,1,31+,143,1,"Birell 0.0 Vitality Maracuja & Maté nealkoholické pivo s méně cukru 4×0,5 l plech",0,1,0,0
+2026-10-22,1,Birell,732997,control,multipack pivo,recommended,65,65,65,64,1,31+,143,1,"Birell 0.0 Vitality Maracuja & Maté nealkoholické pivo s méně cukru 4×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,pivo plechovka,recommended,,,,,0,not_found,145,0,"Staropramen 12 Pivo ležák světlý 6×0,5 l plech",0,,0,0
+2026-10-22,1,Birell,732997,control,pivo plechovka,recommended,,,,,0,not_found,145,0,"Staropramen 12 Pivo ležák světlý 6×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,energetický nápoj,test,,,,,0,not_found,76,0,Semtex Originál Explosive energy drink plech,0,,0,0
+2026-10-22,1,Birell,732997,control,energetický nápoj,test,,,,,0,not_found,76,0,Semtex Originál Explosive energy drink plech,,,,
+2026-10-22,1,Birell,1457711,target,nápoj s kofeinem,test,17,,16,17,1,11-30,41,0,Kofola Nulka – bez cukru,0,1,0,0
+2026-10-22,1,Birell,732997,control,nápoj s kofeinem,test,,,,,0,not_found,41,0,Kofola Nulka – bez cukru,,,,
+2026-10-22,1,Birell,1457711,target,nealko s kofeinem,test,15,15,15,15,1,11-30,35,1,Kofola Nulka – bez cukru,0,1,0,0
+2026-10-22,1,Birell,732997,control,nealko s kofeinem,test,,,,,0,not_found,35,1,Kofola Nulka – bez cukru,,,,
+2026-10-22,1,Birell,1457711,target,kofeinové pivo,monitor,5,4,5,5,1,top10,25,2,Semtex Originál Explosive energy drink plech,1,1,0,0
+2026-10-22,1,Birell,732997,control,kofeinové pivo,monitor,,,,,0,not_found,25,2,Semtex Originál Explosive energy drink plech,,,,
+2026-10-22,1,Birell,1457711,target,birell energy,monitor,2,2,2,2,1,top10,21,10,"Birell 0.0 Polotmavý citron nealkoholické pivo 4×0,33 l plech",1,1,0,0
+2026-10-22,1,Birell,732997,control,birell energy,monitor,19,19,20,19,1,11-30,21,10,"Birell 0.0 Polotmavý citron nealkoholické pivo 4×0,33 l plech",,,,
+2026-10-22,1,Birell,1457711,target,energetické pivo,monitor,2,1,2,2,1,top10,25,2,Semtex Originál Explosive energy drink plech,1,1,0,0
+2026-10-22,1,Birell,732997,control,energetické pivo,monitor,,,,,0,not_found,25,2,Semtex Originál Explosive energy drink plech,,,,
+2026-10-22,1,Birell,1457711,target,birell grep,monitor,3,3,3,2,1,top10,25,9,"Birell 0.0 Vitality Maracuja & Maté nealkoholické pivo s méně cukru 4×0,5 l plech",1,1,0,0
+2026-10-22,1,Birell,732997,control,birell grep,monitor,22,22,22,19,1,11-30,25,9,"Birell 0.0 Vitality Maracuja & Maté nealkoholické pivo s méně cukru 4×0,5 l plech",,,,
+2026-10-22,1,Birell,1457711,target,birell pomelo,monitor,3,3,3,3,1,top10,19,10,"Birell 0. 0 Malina & Limetka nealkoholické pivo 4×0,33 l plech",1,1,0,0
+2026-10-22,1,Birell,732997,control,birell pomelo,monitor,16,16,16,17,1,11-30,19,10,"Birell 0. 0 Malina & Limetka nealkoholické pivo 4×0,33 l plech",,,,
