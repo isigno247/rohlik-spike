@@ -1,0 +1,14 @@
+{
+  "client": "Birell",
+  "label": "Birell 0.0 Energy Pomelo & Grep",
+  "target_sku": 1457711,
+  "control_sku": 732997,
+  "brand_token": "birell",
+  "warehouse_id": 8791,
+  "keywords": {
+    "current": ["pivo", "pivko", "piva", "pivečko", "birell", "ovocné pivo", "citrusové pivo", "kofein", "pivo s kofeinem", "prazdroj"],
+    "recommended": ["nealkoholické pivo", "nealko pivo", "ochucené nealko pivo", "pivo 0.0", "pivo nealko plech", "prazdroj nealko", "nealko pivo grep", "grepové pivo", "grapefruitové pivo", "radler grep", "nealko radler", "alcohol free beer", "non alcoholic beer", "pivo pro řidiče", "pivo po sportu", "plzeňský prazdroj", "multipack pivo", "pivo plechovka"],
+    "test": ["energetický nápoj", "nápoj s kofeinem", "nealko s kofeinem"],
+    "monitor": ["kofeinové pivo", "birell energy", "energetické pivo", "birell grep", "birell pomelo"]
+  }
+}
