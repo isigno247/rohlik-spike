@@ -1,0 +1,55 @@
+name: Prazdroj keyword tracker
+on:
+  schedule:
+    - cron: '17 3 * * *'    # full run, daily ~04:17 Prague (winter)
+    - cron: '7 10 * * *'    # key terms, ~11:07 Prague
+    - cron: '7 16 * * *'    # key terms, ~17:07 Prague
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'full = all keywords, key = 22 key terms only'
+        default: 'key'
+        type: choice
+        options: [key, full]
+permissions:
+  contents: write
+  issues: write
+concurrency: prazdroj-tracker
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '17 3 * * *' && 'full' || 'key') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Measure
+        run: node prazdroj_tracker.mjs
+      - name: Save history to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history
+          git commit -m "Prazdroj tracker ${MODE} run ${{ github.run_number }}" || echo "nothing to commit"
+          git pull --rebase --autostash || true
+          git push
+      - name: Post data parts as issues (GitHub e-mails them)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for f in out/part_*.csv; do
+            title="[rohlik-tracker] prazdroj $(head -1 "$f" | sed 's/^# prazdroj //')"
+            url=$(gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f")
+            gh issue close "$url" --repo "${{ github.repository }}" || true
+          done
+      - name: Report failure by issue too
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create --repo "${{ github.repository }}" \
+            --title "[rohlik-tracker] prazdroj FAILED run ${{ github.run_number }}" \
+            --body "The Prazdroj tracker run failed. Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
