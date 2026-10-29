@@ -42,8 +42,7 @@ jobs:
         run: |
           for f in out/part_*.csv; do
             title="[rohlik-tracker] prazdroj $(head -1 "$f" | sed 's/^# prazdroj //')"
-            url=$(gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f")
-            gh issue close "$url" --repo "${{ github.repository }}" || true
+            gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f"
           done
       - name: Report failure by issue too
         if: failure()
