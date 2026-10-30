@@ -43,9 +43,10 @@ jobs:
           for f in out/part_*.csv; do
             title="[rohlik-tracker] prazdroj $(head -1 "$f" | sed 's/^# prazdroj //')"
             gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f"
+            sleep 20   # space out e-mails so GitHub/Outlook don't throttle a burst
           done
       - name: Report failure by issue too
-        if: failure()
+        if: failure() || cancelled()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
