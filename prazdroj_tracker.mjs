@@ -75,15 +75,25 @@ async function main() {
     }
     if (!snaps.length) { kwRows.push({ k, groups, error: 'no response' }); continue; }
     const s0 = snaps[0];
-    const top = s0.rows.slice(0, cfg.topN);
-    const brandCount = {};
-    top.forEach(r => brandCount[r.brand] = (brandCount[r.brand] || 0) + 1);
-    const orgTop = s0.rows.filter(r => !r.ad).slice(0, cfg.topN);
     const isOwn = r => own.has(r.brand.toLowerCase()) || !!cfg.skus[r.id];
-    const ownTop = top.filter(isOwn).length;
-    const ownOrgTop = orgTop.filter(isOwn).length;
-    const at = pos => s0.rows.find(r => r.pos === pos && r.ad);
-    const ad1 = at(1), ad4 = at(4);
+    // share of search = average over all passes (ads rotate between page loads)
+    const shares = snaps.map(s => {
+      const top = s.rows.slice(0, cfg.topN), org = s.rows.filter(r => !r.ad).slice(0, cfg.topN);
+      return [top.length ? top.filter(isOwn).length / top.length : null, org.length ? org.filter(isOwn).length / org.length : null];
+    });
+    const mean = a => { const b = a.filter(x => x != null); return b.length ? b.reduce((x, y) => x + y, 0) / b.length : null; };
+    const sosAll = mean(shares.map(x => x[0])), sosOrg = mean(shares.map(x => x[1]));
+    const brandCount = {};
+    s0.rows.slice(0, cfg.topN).forEach(r => brandCount[r.brand] = (brandCount[r.brand] || 0) + 1);
+    // sponsored slot = the product seen there most often across passes, with how often (e.g. 2/3)
+    const slot = pos => {
+      const seen = snaps.map(s => s.rows.find(r => r.pos === pos && r.ad)).filter(Boolean);
+      if (!seen.length) return [null, ''];
+      const c = {}; seen.forEach(r => c[r.id] = (c[r.id] || 0) + 1);
+      const best = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+      return [seen.find(r => String(r.id) === best[0]), `${best[1]}/${snaps.length}`];
+    };
+    const [ad1, ad1Hold] = slot(1), [ad4, ad4Hold] = slot(4);
     const otherAds = [...new Set(snaps.flatMap(s => s.rows.filter(r => r.ad && r.pos !== 1 && r.pos !== 4).map(r => `${r.brand}@${r.pos}`)))].join(' | ');
 
     // Prazdroj SKUs: tracked + linked to this keyword
@@ -110,11 +120,12 @@ async function main() {
       ad1_pid: ad1?.id ?? '', ad1_brand: ad1?.brand ?? '', ad1_name: ad1?.name ?? '', ad1_promo: ad1?.promo ?? '',
       ad4_pid: ad4?.id ?? '', ad4_brand: ad4?.brand ?? '', ad4_name: ad4?.name ?? '', ad4_promo: ad4?.promo ?? '',
       other_ads: otherAds,
-      prazdroj_sos_top20: top.length ? (ownTop / top.length).toFixed(2) : '', prazdroj_sos_org_top20: orgTop.length ? (ownOrgTop / orgTop.length).toFixed(2) : '',
+      prazdroj_sos_top20: sosAll == null ? '' : sosAll.toFixed(3), prazdroj_sos_org_top20: sosOrg == null ? '' : sosOrg.toFixed(3),
       prazdroj_best_org_pos: Math.min(...ownPositions.map(x => parseInt(x.split(':')[1])), 999) === 999 ? '' : Math.min(...ownPositions.map(x => parseInt(x.split(':')[1]))),
       prazdroj_positions: ownPositions.join(' '),
       linked_skus: linked.size, linked_found: [...linked].filter(p => s0.rows.some(r => r.id === p)).length,
-      brands_top20: Object.entries(brandCount).sort((a, b) => b[1] - a[1]).map(([b, c]) => `${b}:${c}`).join(' | ') });
+      brands_top20: Object.entries(brandCount).sort((a, b) => b[1] - a[1]).map(([b, c]) => `${b}:${c}`).join(' | '),
+      ad1_hold: ad1Hold, ad4_hold: ad4Hold });
   }
 
   fs.mkdirSync('history', { recursive: true }); fs.mkdirSync('out', { recursive: true });
@@ -124,6 +135,10 @@ async function main() {
     const body = rows.map(r => cols.map(c => csvCell(r[c])).join(',')).join('\n');
     const file = `history/${cfg.client}_${name}.csv`;
     if (!fs.existsSync(file)) fs.writeFileSync(file, cols.join(',') + '\n');
+    else {   // columns added at the end since the file was started: rewrite the header line only
+      const txt = fs.readFileSync(file, 'utf8'), nl = txt.indexOf('\n');
+      if (txt.slice(0, nl) !== cols.join(',')) fs.writeFileSync(file, cols.join(',') + txt.slice(nl));
+    }
     fs.appendFileSync(file, body + '\n');
     return cols.join(',') + '\n' + body + '\n';
   };
@@ -133,7 +148,7 @@ async function main() {
   // e-mail parts: slim columns (full detail stays in history/ in git) and small parts –
   // 55k-char parts were created as issues but GitHub never e-mailed them; ~12k parts arrive reliably
   const EMAIL_COLS = ['date', 'time', 'mode', 'passes', 'keyword', 'groups', 'key', 'total_hits', 'n_ads',
-    'ad1_pid', 'ad1_brand', 'ad1_promo', 'ad4_pid', 'ad4_brand', 'ad4_promo',
+    'ad1_pid', 'ad1_brand', 'ad1_promo', 'ad4_pid', 'ad4_brand', 'ad4_promo', 'ad1_hold', 'ad4_hold',
     'prazdroj_sos_top20', 'prazdroj_sos_org_top20', 'prazdroj_best_org_pos', 'prazdroj_positions',
     'linked_skus', 'linked_found', 'brands_top5'];
   const PART_LIMIT = Number(process.env.PART_LIMIT || 10000);
@@ -149,7 +164,7 @@ async function main() {
     }
     if (cur.length) parts.push({ label, text: [head, ...cur].join('\n') });
   };
-  if (emailCsv) chunk(emailCsv, 'keywords');   // positions + full keyword columns stay in history/ (git)
+  if (emailCsv && process.env.EMAIL_KEYWORDS === '1') chunk(emailCsv, 'keywords');   // positions + full keyword columns stay in history/ (git)
   parts.forEach((p, i) => fs.writeFileSync(`out/part_${String(i + 1).padStart(2, '0')}_${p.label}.csv`,
     `# ${cfg.client} ${pragueDate} ${pragueTime} mode=${MODE} part ${i + 1}/${parts.length} (${p.label})\n${p.text}\n# end\n`));
   console.log(`done: ${list.length} keywords, ${n} requests, ${PASSES} pass(es), ${kwRows.length} keyword rows, ${posRows.length} position rows, ${parts.length} parts`);
