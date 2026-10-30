@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'full = all keywords, key = 22 key terms only'
+        description: 'full = all keywords, key = 22 key terms only, dash = rebuild dashboard feed only'
         default: 'key'
         type: choice
-        options: [key, full]
+        options: [key, full, dash]
 permissions:
   contents: write
   issues: write
@@ -27,7 +27,11 @@ jobs:
         with:
           node-version: '22'
       - name: Measure
+        if: env.MODE != 'dash'
         run: node prazdroj_tracker.mjs
+      - name: Dashboard feed
+        if: env.MODE == 'full' || env.MODE == 'dash'
+        run: node prazdroj_dash.mjs
       - name: Save history to the repo
         run: |
           git config user.name "github-actions[bot]"
@@ -40,7 +44,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for f in out/part_*.csv; do
+          for f in $(ls out/part_*.csv 2>/dev/null); do
             title="[rohlik-tracker] prazdroj $(head -1 "$f" | sed 's/^# prazdroj //')"
             gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f"
             sleep 20   # space out e-mails so GitHub/Outlook don't throttle a burst
