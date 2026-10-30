@@ -130,18 +130,26 @@ async function main() {
   const kwCsv = write(kwRows, 'keywords');
   const posCsv = write(posRows, 'positions');
 
-  // e-mail parts (GitHub issue body limit ~65k chars): one block per part, header repeated
+  // e-mail parts: slim columns (full detail stays in history/ in git) and small parts –
+  // 55k-char parts were created as issues but GitHub never e-mailed them; ~12k parts arrive reliably
+  const EMAIL_COLS = ['date', 'time', 'mode', 'passes', 'keyword', 'groups', 'key', 'total_hits', 'n_ads',
+    'ad1_pid', 'ad1_brand', 'ad1_promo', 'ad4_pid', 'ad4_brand', 'ad4_promo',
+    'prazdroj_sos_top20', 'prazdroj_sos_org_top20', 'prazdroj_best_org_pos', 'prazdroj_positions',
+    'linked_skus', 'linked_found', 'brands_top5'];
+  const PART_LIMIT = Number(process.env.PART_LIMIT || 10000);
+  const slim = r => ({ ...r, brands_top5: (r.brands_top20 || '').split(' | ').slice(0, 5).join(' | ') });
+  const emailCsv = kwRows.length ? EMAIL_COLS.join(',') + '\n' + kwRows.map(r => EMAIL_COLS.map(c => csvCell(slim(r)[c])).join(',')).join('\n') + '\n' : '';
   const parts = [];
   const chunk = (csv, label) => {
     const [head, ...lines] = csv.trim().split('\n');
     let cur = [];
     for (const l of lines) {
-      if ((head.length + cur.join('\n').length + l.length) > 55000) { parts.push({ label, text: [head, ...cur].join('\n') }); cur = []; }
+      if ((head.length + cur.join('\n').length + l.length) > PART_LIMIT) { parts.push({ label, text: [head, ...cur].join('\n') }); cur = []; }
       cur.push(l);
     }
     if (cur.length) parts.push({ label, text: [head, ...cur].join('\n') });
   };
-  chunk(kwCsv, 'keywords');   // positions stay in history/ (git); keyword rows already carry Prazdroj positions
+  if (emailCsv) chunk(emailCsv, 'keywords');   // positions + full keyword columns stay in history/ (git)
   parts.forEach((p, i) => fs.writeFileSync(`out/part_${String(i + 1).padStart(2, '0')}_${p.label}.csv`,
     `# ${cfg.client} ${pragueDate} ${pragueTime} mode=${MODE} part ${i + 1}/${parts.length} (${p.label})\n${p.text}\n# end\n`));
   console.log(`done: ${list.length} keywords, ${n} requests, ${PASSES} pass(es), ${kwRows.length} keyword rows, ${posRows.length} position rows, ${parts.length} parts`);
