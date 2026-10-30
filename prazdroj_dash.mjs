@@ -26,13 +26,12 @@ const kwAll = read(`history/${cfg.client}_keywords.csv`).filter(r => r.mode === 
 const posAll = read(`history/${cfg.client}_positions.csv`).filter(r => r.mode === 'full');
 if (!kwAll.length) { console.log('dash: no full runs yet'); process.exit(0); }
 
-// one full run per date: the latest time that day
-const runOf = {};
-for (const r of kwAll) if (!runOf[r.date] || r.time > runOf[r.date]) runOf[r.date] = r.time;
-const dates = Object.keys(runOf).sort();
-const D = dates.at(-1), P = dates.length > 1 ? dates.at(-2) : null;
-const kwOn = d => kwAll.filter(r => r.date === d && r.time === runOf[d]);
-const posOn = d => posAll.filter(r => r.date === d && r.time === runOf[d]);
+// every full run is its own point (date + time), compared with the full run before it
+const runId = r => `${r.date} ${r.time}`;
+const runs = [...new Set(kwAll.map(runId))].sort();
+const D = runs.at(-1), P = runs.length > 1 ? runs.at(-2) : null;
+const kwOn = id => kwAll.filter(r => runId(r) === id);
+const posOn = id => posAll.filter(r => runId(r) === id);
 const num = x => (x === '' || x == null ? null : Number(x));
 const r2 = x => x == null ? null : Math.round(x * 1000) / 1000;
 const avg = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
@@ -42,11 +41,11 @@ const conquestOf = rows => rows.filter(r => brandRx.test(r.keyword)).flatMap(r =
   [['1', r.ad1_brand, r.ad1_promo], ['4', r.ad4_brand, r.ad4_promo]].filter(([, b]) => b && !isOwn(b)).map(([s, b, p]) => [r.keyword, s, b, p]));
 
 const out = [];
-// trend: one row per full-run date (last 60)
-for (const d of dates.slice(-60)) {
+// trend: one row per full run (last 60)
+for (const d of runs.slice(-60)) {
   const rows = kwOn(d).filter(r => num(r.total_hits) > 0);
   const a1 = rows.filter(r => r.ad1_brand), a4 = rows.filter(r => r.ad4_brand);
-  out.push(['tr', d, runOf[d], rows.length, r2(avg(rows.map(r => num(r.prazdroj_sos_top20)))), r2(avg(rows.map(r => num(r.prazdroj_sos_org_top20)))),
+  out.push(['tr', d.slice(0, 10), d.slice(11), rows.length, r2(avg(rows.map(r => num(r.prazdroj_sos_top20)))), r2(avg(rows.map(r => num(r.prazdroj_sos_org_top20)))),
     rows.filter(r => num(r.prazdroj_sos_top20) === 0).length, a1.filter(r => isOwn(r.ad1_brand)).length, a1.length,
     a4.filter(r => isOwn(r.ad4_brand)).length, a4.length, a1.filter(r => r.ad1_promo).length + a4.filter(r => r.ad4_promo).length,
     conquestOf(rows).length]);
@@ -121,7 +120,6 @@ const parts = []; let cur = [];
 for (const l of lines) { if (cur.join('\n').length + l.length > 9000) { parts.push(cur); cur = []; } cur.push(l); }
 if (cur.length) parts.push(cur);
 fs.mkdirSync('out', { recursive: true });
-const time = runOf[D];
 parts.forEach((p, i) => fs.writeFileSync(`out/part_${90 + i}_dash.csv`,
-  `# ${cfg.client} ${D} ${time} mode=full dash ${i + 1}/${parts.length} (dash)\n\`\`\`\n${p.join('\n')}\n\`\`\`\n# end\n`));
+  `# ${cfg.client} ${D} mode=full dash ${i + 1}/${parts.length} (dash)\n\`\`\`\n${p.join('\n')}\n\`\`\`\n# end\n`));
 console.log(`dash: ${D} vs ${P || '-'}: ${lines.length} lines, ${parts.length} part(s)`);
