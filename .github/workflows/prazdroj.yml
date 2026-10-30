@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: '22'
       - name: Measure
+        id: measure
         if: env.MODE != 'dash'
         run: node prazdroj_tracker.mjs
       - name: Dashboard feed
@@ -38,22 +39,36 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add history
           git commit -m "Prazdroj tracker ${MODE} run ${{ github.run_number }}" || echo "nothing to commit"
-          git pull --rebase --autostash || true
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash && git push && exit 0
+            echo "push attempt $i failed, retrying in 30 s"; sleep 30
+          done
+          echo "::error::history could not be saved to the repo after 5 attempts"; exit 1
       - name: Post data parts as issues (GitHub e-mails them)
+        if: always() && steps.measure.outcome != 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          failed=0
           for f in $(ls out/part_*.csv 2>/dev/null); do
             title="[rohlik-tracker] prazdroj $(head -1 "$f" | sed 's/^# prazdroj //')"
-            gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f"
+            ok=0
+            for i in 1 2 3 4 5; do
+              if gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "$f"; then ok=1; break; fi
+              echo "issue attempt $i failed for $f, retrying in 30 s"; sleep 30
+            done
+            [ $ok = 1 ] || failed=1
             sleep 20   # space out e-mails so GitHub/Outlook don't throttle a burst
           done
+          exit $failed
       - name: Report failure by issue too
         if: failure() || cancelled()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue create --repo "${{ github.repository }}" \
-            --title "[rohlik-tracker] prazdroj FAILED run ${{ github.run_number }}" \
-            --body "The Prazdroj tracker run failed. Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          for i in 1 2 3 4 5; do
+            gh issue create --repo "${{ github.repository }}" \
+              --title "[rohlik-tracker] prazdroj FAILED run ${{ github.run_number }}" \
+              --body "The Prazdroj tracker run failed. Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" && exit 0
+            sleep 30
+          done
