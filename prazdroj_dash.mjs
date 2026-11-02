@@ -128,25 +128,25 @@ if (P) {
   }).filter(([, d1, lasting]) => Math.abs(d1) >= 0.2 || (lasting && Math.abs(d1) >= 0.1))
     .sort((a, b) => b[3] - a[3]);
   moves.slice(0, 3).forEach(([k, d, lasting]) => ins.push(['ins', D, d > 0 ? 'up' : 'down',
-    `"${k}": Prazdroj organic share of the top 20 ${d > 0 ? 'up' : 'down'} ${Math.round(Math.abs(d) * 100)} pts to ${pct(org(ktD[k]))}${lasting ? ', second run in a row' : ''}.`]));
+    `„${k}“: podíl Prazdroje v organické top 20 ${d > 0 ? 'vzrostl' : 'klesl'} o ${Math.round(Math.abs(d) * 100)} b. na ${pct(org(ktD[k]))}${lasting ? ', druhé měření po sobě' : ''}.`]));
   const adCh = [];
   for (const k of Object.keys(ktD)) for (const s of ['1', '4']) {
     const b = ktD[k][`ad${s}_brand`], a = ktP[k]?.[`ad${s}_brand`], hold = ktD[k][`ad${s}_hold`];
     const firm = !hold || /^(\d+)\/\1$/.test(hold) || Number(hold.split('/')[0]) >= 2;   // seen in most passes
     if (b && b !== a && !isOwn(b) && firm) adCh.push([num(ktD[k].total_hits), ['ins', D, 'watch',
-      `"${k}": ${b} took sponsored #${s}${ktD[k][`ad${s}_promo`] ? ' with ' + ktD[k][`ad${s}_promo`] : ''}${hold ? ' (' + hold + ' passes)' : ''}, was ${a || 'empty'}.`]]);
+      `„${k}“: ${b} získal sponzorovanou pozici ${s}${ktD[k][`ad${s}_promo`] ? ' s akcí ' + ktD[k][`ad${s}_promo`] : ''}${hold ? ' (' + hold + ' načtení)' : ''}, předtím ${a || 'nikdo'}.`]]);
   }
   adCh.sort((a, b) => b[0] - a[0]).slice(0, 3).forEach(([, x]) => ins.push(x));
   const lost = cfg.skuList.map(([pid, br]) => [String(pid), br]).filter(([pid]) => sP[pid] && (sD[pid]?.seen || 0) < sP[pid].seen - 2)
     .sort((a, b) => (sP[b[0]].seen - (sD[b[0]]?.seen || 0)) - (sP[a[0]].seen - (sD[a[0]]?.seen || 0)));
-  lost.slice(0, 2).forEach(([pid, br]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} shows on ${sD[pid]?.seen || 0} keywords, ${sP[pid].seen - (sD[pid]?.seen || 0)} fewer than the run before.`]));
+  lost.slice(0, 2).forEach(([pid, br]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${sD[pid]?.seen || 0} dotazech, o ${sP[pid].seen - (sD[pid]?.seen || 0)} méně než v minulém měření.`]));
   const cqP = new Set(conquestOf(kwOn(P)).map(x => x.join('|')));
-  conquestOf(latest).filter(x => !cqP.has(x.join('|'))).slice(0, 2).forEach(([k, s, b, p]) => ins.push(['ins', D, 'watch', `New competitor ad on a Prazdroj brand search: ${b} at #${s} on "${k}"${p ? ' (' + p + ')' : ''}.`]));
+  conquestOf(latest).filter(x => !cqP.has(x.join('|'))).slice(0, 2).forEach(([k, s, b, p]) => ins.push(['ins', D, 'watch', `Nová reklama konkurence na značkovém dotazu Prazdroje: ${b} na pozici ${s} u „${k}“${p ? ' (' + p + ')' : ''}.`]));
 }
 Object.values(ktD).filter(r => num(r.total_hits) >= 20 && org(r) != null).sort((a, b) => org(a) - org(b)).slice(0, 2)
-  .forEach(r => ins.push(['ins', D, 'gap', `Weakest key term: "${r.keyword}" – Prazdroj holds ${pct(org(r))} of the organic top 20 (${r.total_hits} results).`]));
+  .forEach(r => ins.push(['ins', D, 'gap', `Nejslabší klíčový dotaz: „${r.keyword}“ – Prazdroj má ${pct(org(r))} organické top 20 (${r.total_hits} výsledků).`]));
 const t = out.filter(x => x[0] === 'tr').at(-1);
-if (t) ins.push(['ins', D, 'info', `Prazdroj holds sponsored #1 on ${t[8]} of ${t[9]} keywords with an ad, #4 on ${t[10]} of ${t[11]}; ${Math.round(t[12] / Math.max(1, t[9] + t[11]) * 100)} % of all ads run with a promo.`]);
+if (t) ins.push(['ins', D, 'info', `Prazdroj drží sponzorovanou pozici 1 na ${t[8]} z ${t[9]} dotazů s reklamou a pozici 4 na ${t[10]} z ${t[11]}; ${Math.round(t[12] / Math.max(1, t[9] + t[11]) * 100)} % všech reklam běží s akcí.`]);
 out.push(...ins.slice(0, 10));
 
 // write parts: ≤ 9,000 chars each, JSON lines inside a code fence
