@@ -109,6 +109,37 @@ for (const [pid] of cfg.skuList) {
 // gp – current backend keywords where none of the linked SKUs shows (latest)
 latest.filter(r => /(^|\+)c(\+|$)/.test(r.groups) && num(r.linked_skus) > 0 && num(r.linked_found) === 0)
   .slice(0, 60).forEach(r => out.push(['gp', D, r.keyword, num(r.linked_skus), num(r.total_hits), (r.brands_top20 || '').split(' | ')[0] || '']));
+// ba – before / after go-live per SKU (Michal's two measures):
+//   1) new visibility: on how many of its NEW (planned) keywords the SKU appears in the top 100
+//   2) position shift: median organic position on all its assigned keywords (current + new)
+// before = average over full runs before the first go-live date (all runs so far if none logged); after = latest full run on/after it
+const G = (cfg.golive || []).map(g => g.date).sort()[0] || null;
+const preRuns = runs.filter(id => !G || id.slice(0, 10) < G), postRuns = G ? runs.filter(id => id.slice(0, 10) >= G) : [];
+const assigned = {};
+cfg.keywords.forEach(([k, g, c, p]) => {
+  c.forEach(i => { const pid = String(cfg.skuList[i][0]); (assigned[pid] ??= { cur: 0, neu: 0 }).cur++; });
+  p.forEach(i => { const pid = String(cfg.skuList[i][0]); (assigned[pid] ??= { cur: 0, neu: 0 }).neu++; });
+});
+const baStats = id => {
+  const s = {};
+  for (const r of posOn(id)) {
+    if (r.kw_status === 'not linked') continue;
+    const x = s[r.pid] ??= { neu: new Set(), cur: new Set(), pos: [] };
+    (r.kw_status === 'current' ? x.cur : x.neu).add(r.keyword);
+    const o = num(r.org_pos); if (o != null) x.pos.push(o);
+  }
+  return s;
+};
+const preS = preRuns.slice(-7).map(baStats), postS = postRuns.length ? baStats(postRuns.at(-1)) : null;
+const r1 = x => x == null ? null : Math.round(x * 10) / 10;
+for (const [pid] of cfg.skuList.map(([p]) => [String(p)])) {
+  const a = assigned[pid] || { cur: 0, neu: 0 };
+  const bNew = r1(avg(preS.map(s => s[pid]?.neu.size || 0))), bCur = r1(avg(preS.map(s => s[pid]?.cur.size || 0)));
+  const bMed = median(preS.map(s => median(s[pid]?.pos || [])));
+  const p = postS?.[pid];
+  out.push(['ba', D, pid, a.neu, bNew, postS ? (p?.neu.size || 0) : null, bMed, postS ? median(p?.pos || []) : null, a.cur, bCur, postS ? (p?.cur.size || 0) : null]);
+}
+out.push(['bag', D, G || '', Math.min(preRuns.length, 7), postRuns.length]);
 // gl – go-live log (dated markers on the trend)
 for (const g of cfg.golive || []) out.push(['gl', g.date, (g.keywords || []).length, (g.pids || []).length, g.note || '']);
 // cfg – facts the page shows
