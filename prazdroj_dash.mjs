@@ -2,6 +2,7 @@
 // Runs after a full tracker run. Reads history/*.csv + config, writes out/part_9N_dash.csv:
 // one JSON array per line, first cell = table id. The dashboard reads these e-mails via MS365.
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 
 const cfg = JSON.parse(fs.readFileSync(process.env.CONFIG || 'config/prazdroj.json', 'utf8'));
 const own = new Set(cfg.ownBrands.map(b => b.toLowerCase()));
@@ -178,14 +179,50 @@ Object.values(ktD).filter(r => num(r.total_hits) >= 20 && org(r) != null).sort((
   .forEach(r => ins.push(['ins', D, 'gap', `Nejslabší klíčový dotaz: „${r.keyword}“ – Prazdroj má ${pct(org(r))} organické top 20 (${r.total_hits} výsledků).`]));
 const t = out.filter(x => x[0] === 'tr').at(-1);
 if (t) ins.push(['ins', D, 'info', `Prazdroj drží sponzorovanou pozici 1 na ${t[8]} z ${t[9]} dotazů s reklamou a pozici 4 na ${t[10]} z ${t[11]}; ${Math.round(t[12] / Math.max(1, t[9] + t[11]) * 100)} % všech reklam běží s akcí.`]);
-out.push(...ins.slice(0, 10));
+
+// kq – every keyword of the latest full run: where it is assigned (backend now / POS Media recommendation), what Rohlík shows
+//      in the top 5 and which of those products are discounted. pq – names of non-Prazdroj products in those top 5.
+//      Both go out gzip+base64 ("~" lines) – ~860 keywords would otherwise need 20+ e-mails.
+const idxOf = Object.fromEntries(cfg.skuList.map(([pid], i) => [String(pid), i]));
+const liveOn = new Map();
+for (const g of cfg.golive || []) for (const p of g.pids || []) for (const k of g.keywords || []) liveOn.set(`${p}|${k.toLowerCase()}`, g.date);
+const discOfPromo = p => { if (!p) return ''; const m = [...String(p).matchAll(/-(\d+)%/g)].map(x => Number(x[1])); return m.length && Math.max(...m) > 0 ? String(Math.max(...m)) : 'y'; };
+const posD = {};
+for (const r of posOn(D)) (posD[r.keyword] ??= []).push(r);
+const kwCfg = Object.fromEntries(cfg.keywords.map(([k, g, c, p, key]) => [k, { c, p, key }]));
+const zl = [], shown = new Set();
+let slots = 0, slotsDisc = 0;
+const ownDisc = [], ownFull = [];
+for (const r of latest) {
+  const c = kwCfg[r.keyword]; if (!c) continue;
+  const plan = c.p.map(i => { const d = liveOn.get(`${cfg.skuList[i][0]}|${r.keyword.toLowerCase()}`); return d ? `${i}@${d}` : String(i); });
+  const pos = (posD[r.keyword] || []).filter(x => idxOf[x.pid] != null && x.org_pos !== '').map(x => {
+    const d = discOfPromo(x.promo); (d ? ownDisc : ownFull).push(num(x.org_pos));
+    return `${idxOf[x.pid]}:${x.org_pos}:${d}${x.sponsored === '1' ? ':a' : ''}`;
+  }).join(' ');
+  const top = (r.top5 || '').split(' ').filter(Boolean);
+  top.forEach(x => { const [pid, , d] = x.split(':'); slots++; if (d) slotsDisc++; if (idxOf[pid] == null) shown.add(pid); });
+  zl.push(['kq', D, r.keyword, c.key ? 1 : 0, c.c.join(' '), plan.join(' '), org(r), num(r.prazdroj_best_org_pos), pos, r.top5 || '', num(r.promo_top20), num(r.total_hits)]);
+}
+const PROD = `history/${cfg.client}_products.json`;
+const prod = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
+for (const pid of shown) zl.push(['pq', D, pid, prod[pid]?.[0] || '', (prod[pid]?.[1] || '').slice(0, 40)]);
+const mD = median(ownDisc), mF = median(ownFull);
+out.push(['qs', D, slots, slotsDisc, mD, mF, ownDisc.length, ownFull.length]);
+if (slots && ownDisc.length >= 5 && ownFull.length >= 5) ins.push(['ins', D, 'info',
+  `Slevy: v top 5 výsledků je ve slevě ${Math.round(slotsDisc / slots * 100)} % produktů. SKU Prazdroje ve slevě mají medián organické pozice ${mD}, bez slevy ${mF} (souvislost, ne nutně příčina).`]);
+out.push(...ins.slice(0, 11));
 
 // write parts: ≤ 9,000 chars each, JSON lines inside a code fence
 const lines = out.map(x => JSON.stringify(x));
+if (zl.length) {
+  const b64 = zlib.gzipSync(zl.map(x => JSON.stringify(x)).join('\n'), { level: 9 }).toString('base64');
+  for (let i = 0, n = 0; i < b64.length; i += 120, n++) lines.push(`~${String(n).padStart(4, '0')} ${b64.slice(i, i + 120)}`);
+}
 const parts = []; let cur = [];
 for (const l of lines) { if (cur.join('\n').length + l.length > 9000) { parts.push(cur); cur = []; } cur.push(l); }
 if (cur.length) parts.push(cur);
 fs.mkdirSync('out', { recursive: true });
-parts.forEach((p, i) => fs.writeFileSync(`out/part_${90 + i}_dash.csv`,
+parts.forEach((p, i) => fs.writeFileSync(`out/part_${900 + i}_dash.csv`,
   `# ${cfg.client} ${D} mode=full dash ${i + 1}/${parts.length} (dash)\n\`\`\`\n${p.join('\n')}\n\`\`\`\n# end\n`));
 console.log(`dash: ${D} vs ${P || '-'}: ${lines.length} lines, ${parts.length} part(s)`);
