@@ -198,7 +198,7 @@ for (const r of latest) {
   top.forEach(([pid]) => { if (idxOf[pid] == null) shown.add(pid); });
   const topStr = top.map(([pid, t]) => `${pid}:${t.ad * 2 > t.n ? 'a' : 'o'}:${t.dn ? (t.dmax || 'y') : ''}:${t.n}:${r1(t.pos / t.n)}:${t.dn}`).join(' ');
   zl.push(['kq', D, r.keyword, c.key ? 1 : 0, c.c.join(' '), plan.join(' '), r3(avg(all.map(org))), median(all.map(x => num(x.prazdroj_best_org_pos))),
-    pos, topStr, r1(avg(withTop.map(x => num(x.promo_top20)))), num(r.total_hits), all.length, nt]);
+    pos, topStr, r1(avg(withTop.map(x => num(x.promo_top20)))), num(r.total_hits), all.length, nt, r.groups || '']);
 }
 const PROD = `history/${cfg.client}_products.json`;
 const prod = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
@@ -217,7 +217,7 @@ if (NP) {
     const b = avg(before); return [r.keyword, b == null || org(r) == null ? null : org(r) - b, before.length, num(r.total_hits)];
   }).filter(([, d, n]) => d != null && n >= 2 && Math.abs(d) >= 0.1).sort((a, b) => b[3] - a[3]);
   moves.slice(0, 3).forEach(([k, d, n]) => ins.push(['ins', D, d > 0 ? 'up' : 'down',
-    `„${k}“: podíl Prazdroje v organické top 20 je ${pct(org(latestBy[k]))}, o ${Math.round(Math.abs(d) * 100)} b. ${d > 0 ? 'nad' : 'pod'} průměrem ${n} předchozích měření.`]));
+    `„${k}“: Prazdroj má ${pct(org(latestBy[k]))} organické top 20, o ${Math.round(Math.abs(d) * 100)} b. ${d > 0 ? 'víc' : 'méně'} než obvykle (průměr ${n} měření).`]));
   const adCh = [];
   for (const r of kRows) for (const s of ['1', '4']) {
     const b = r[`ad${s}_brand`], hold = r[`ad${s}_hold`];
@@ -225,25 +225,25 @@ if (NP) {
     if (!b || isOwn(b) || !firm) continue;
     const before = (byKw[r.keyword] || []).filter(x => runId(x) < D), had = before.filter(x => x[`ad${s}_brand`] === b).length;
     if (before.length >= 2 && had * 3 <= before.length) adCh.push([num(r.total_hits), ['ins', D, 'watch',
-      `„${r.keyword}“: ${b} drží sponzorovanou pozici ${s}${r[`ad${s}_promo`] ? ' s akcí ' + r[`ad${s}_promo`] : ''}${hold ? ' (' + hold + ' načtení)' : ''}; v předchozích ${before.length} měřeních ji měl jen ${had}×.`]]);
+      `„${r.keyword}“: ${b} má nově reklamu na pozici ${s}${r[`ad${s}_promo`] ? ' (se slevou)' : ''}; předtím ji měl jen ${had}× z ${before.length} měření.`]]);
   }
   adCh.sort((a, b) => b[0] - a[0]).slice(0, 3).forEach(([, x]) => ins.push(x));
   const avgSeen = pid => avg(prior.map(id => skuStats(id)[pid]?.seen || 0));
   const seenAvg = Object.fromEntries(cfg.skuList.map(([p]) => [String(p), avgSeen(String(p))]));
   cfg.skuList.map(([pid, br]) => [String(pid), br]).map(([pid, br]) => [pid, br, (sD[pid]?.seen || 0) - seenAvg[pid]])
     .filter(x => x[2] <= -3).sort((a, b) => a[2] - b[2]).slice(0, 2)
-    .forEach(([pid, br, d]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${sD[pid]?.seen || 0} dotazech, o ${Math.round(-d)} méně než je průměr předchozích ${NP} měření.`]));
+    .forEach(([pid, br, d]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se ukazuje na ${sD[pid]?.seen || 0} dotazech, o ${Math.round(-d)} méně než obvykle.`]));
   const seenCq = new Set(prior.flatMap(id => conquestOf(kwOn(id)).map(x => x.slice(0, 3).join('|'))));
   conquestOf(latest).filter(x => !seenCq.has(x.slice(0, 3).join('|'))).slice(0, 2).forEach(([k, s, b, p]) =>
-    ins.push(['ins', D, 'watch', `Poprvé za ${NP + 1} měření: reklama konkurence na značkovém dotazu Prazdroje – ${b} na pozici ${s} u „${k}“${p ? ' (' + p + ')' : ''}.`]));
+    ins.push(['ins', D, 'watch', `Nová reklama konkurence na brandovém dotazu: ${b} na pozici ${s} u „${k}“${p ? ' (se slevou)' : ''}.`]));
 }
 out.filter(x => x[0] === 'kt' && x[4] != null && x[3] >= 20).sort((a, b) => a[4] - b[4]).slice(0, 2)
-  .forEach(x => ins.push(['ins', D, 'gap', `Nejslabší klíčový dotaz: „${x[2]}“ – Prazdroj má v průměru ${pct(x[4])} organické top 20 (${x[16]} měření).`]));
+  .forEach(x => ins.push(['ins', D, 'gap', `Nejslabší hlavní dotaz: „${x[2]}“ – Prazdroj má jen ${pct(x[4])} organické top 20.`]));
 const trW = zl.filter(x => x[0] === 'tr' && WF.includes(`${x[1]} ${x[2]}`));
 if (trW.length) { const s = i => trW.reduce((a, x) => a + (x[i] || 0), 0);
-  ins.push(['ins', D, 'info', `Za ${trW.length} plných měření drží Prazdroj sponzorovanou pozici 1 v průměru na ${Math.round(s(8) / trW.length)} z ${Math.round(s(9) / trW.length)} dotazů s reklamou a pozici 4 na ${Math.round(s(10) / trW.length)} z ${Math.round(s(11) / trW.length)}; ${Math.round(s(12) / Math.max(1, s(9) + s(11)) * 100)} % reklam běží s akcí.`]); }
+  ins.push(['ins', D, 'info', `Reklama: Prazdroj má pozici 1 v průměru na ${Math.round(s(8) / trW.length)} z ${Math.round(s(9) / trW.length)} dotazů s reklamou a pozici 4 na ${Math.round(s(10) / trW.length)} z ${Math.round(s(11) / trW.length)}. ${Math.round(s(12) / Math.max(1, s(9) + s(11)) * 100)} % všech reklam je se slevou.`]); }
 if (slots && ownDisc.length >= 5 && ownFull.length >= 5) ins.push(['ins', D, 'info',
-  `Slevy: v top 5 výsledků je ve slevě ${Math.round(slotsDisc / slots * 100)} % produktů. SKU Prazdroje ve slevě mají medián organické pozice ${mD}, bez slevy ${mF} (souvislost, ne nutně příčina).`]);
+  `Slevy: ${Math.round(slotsDisc / slots * 100)} % produktů v top 5 je ve slevě. SKU Prazdroje ve slevě jsou typicky na pozici ${mD}, bez slevy na ${mF}.`]);
 out.push(...ins.slice(0, 12));
 
 // write parts: ≤ 9,000 chars each; small tables as JSON lines, large ones gzip+base64 in "~NNNN" lines
