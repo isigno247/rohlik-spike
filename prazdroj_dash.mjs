@@ -102,6 +102,21 @@ for (const r of latest.filter(r => r.key === '1')) {
 // kh – key-term history, every run in the window
 for (const id of WA) for (const r of kwEvery.filter(r => runId(r) === id && r.key === '1'))
   zl.push(['kh', id, r.keyword, org(r), num(r.prazdroj_best_org_pos), r.ad1_brand, r.ad1_hold || '', r.ad4_brand, r.ad4_hold || '']);
+// kr – ranking trend for key terms: best organic position per brand in every run of the window.
+//      From brand_best (all brands, recorded since 3 Nov); older runs: Prazdroj brands only, from the positions history.
+const brandOfPid = Object.fromEntries(cfg.skuList.map(([p, b]) => [String(p), b]));
+for (const id of WA) {
+  const posRun = {};
+  for (const r of posEvery) if (runId(r) === id && r.org_pos !== '') {
+    const o = num(r.org_pos), k = r.keyword, b = r.brand || brandOfPid[r.pid] || '';
+    if (!b) continue;
+    const m = posRun[k] ??= {}; if (m[b] == null || o < m[b]) m[b] = o;
+  }
+  for (const r of kwEvery.filter(x => runId(x) === id && x.key === '1')) {
+    const bb = r.brand_best ? r.brand_best : Object.entries(posRun[r.keyword] || {}).map(([b, o]) => `${b}:${o}`).join('|');
+    if (bb) zl.push(['kr', id, r.keyword, bb, r.brand_best ? 1 : 0]);
+  }
+}
 // ad – sponsored slots by brand: average number of keywords per full run
 const ab = {};
 for (const d of WF) for (const r of kwOn(d)) for (const [s, b, p] of [[1, r.ad1_brand, r.ad1_promo], [4, r.ad4_brand, r.ad4_promo]]) if (b) {
