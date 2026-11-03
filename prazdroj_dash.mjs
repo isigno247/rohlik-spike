@@ -1,5 +1,5 @@
 // Daily dashboard feed for the Prazdroj Search Monitor (POS Media). Node 22, no dependencies.
-// Runs after a full tracker run. Reads history/*.csv + config, writes out/part_9N_dash.csv:
+// Runs after a full tracker run. Reads history/*.csv + config, writes out/part_9NN_dash.csv (every run in the window is aggregated):
 // one JSON array per line, first cell = table id. The dashboard reads these e-mails via MS365.
 import fs from 'node:fs';
 import zlib from 'node:zlib';
@@ -56,65 +56,87 @@ const skuStats = id => {
   return s;
 };
 
-const out = [];
-// tr – one row per full run (last 60): organic share by segment, ad slots, control vs treated SKU positions
-for (const d of runs.slice(-60)) {
+
+// ── window: every run is used. Before a go-live date is logged = all runs so far; after it = all runs since go-live
+//    (mixing pre and post would hide the effect – the before/after section compares the two periods).
+const G = (cfg.golive || []).map(g => g.date).sort()[0] || null;
+const inPeriod = id => !G || runs.every(r => r.slice(0, 10) < G) ? true : id.slice(0, 10) >= G;
+const WF = runs.filter(inPeriod);                                         // full runs in the window
+const WA = [...new Set(kwEvery.map(runId))].sort().filter(inPeriod);     // all runs (full + 13:07/17:07 checks)
+const N = WF.length;
+const r1 = x => x == null ? null : Math.round(x * 10) / 10;
+const mode = a => { const c = {}; a.filter(Boolean).forEach(x => c[x] = (c[x] || 0) + 1); return Object.entries(c).sort((x, y) => y[1] - x[1])[0] || [null, 0]; };
+const discOfPromo = p => { if (!p) return ''; const m = [...String(p).matchAll(/-(\d+)%/g)].map(x => Number(x[1])); return m.length && Math.max(...m) > 0 ? String(Math.max(...m)) : 'y'; };
+const byKw = {};                                    // keyword -> rows over all runs in the window (any mode)
+for (const r of kwEvery) if (WA.includes(runId(r))) (byKw[r.keyword] ??= []).push(r);
+const fullOf = rows => rows.filter(r => r.mode === 'full');
+
+const out = [], zl = [];                            // zl = rows sent gzip+base64 (large tables)
+// tr – one row per full run, all runs (trend; tiles average them in the page)
+for (const d of runs) {
   const rows = kwOn(d).filter(r => num(r.total_hits) > 0);
   const seg = k => r3(avg(rows.filter(r => segOf(r) === k).map(org)));
   const a1 = rows.filter(r => r.ad1_brand), a4 = rows.filter(r => r.ad4_brand);
   const st = controls.size ? skuStats(d) : {};
   const grp = inCtl => r3(avg(Object.entries(st).filter(([pid]) => controls.has(pid) === inCtl).map(([, x]) => median(x.pos))));
-  out.push(['tr', d.slice(0, 10), d.slice(11), rows.length, seg('key'), seg('generic'), seg('brand'),
+  zl.push(['tr', d.slice(0, 10), d.slice(11), rows.length, seg('key'), seg('generic'), seg('brand'),
     rows.filter(r => segOf(r) === 'generic' && org(r) === 0).length,
     a1.filter(r => isOwn(r.ad1_brand)).length, a1.length, a4.filter(r => isOwn(r.ad4_brand)).length, a4.length,
     a1.filter(r => r.ad1_promo).length + a4.filter(r => r.ad4_promo).length, conquestOf(rows).length,
     controls.size ? grp(true) : null, controls.size ? grp(false) : null]);
 }
-// kt – key terms, latest and previous full run (latest carries Prazdroj SKU positions for the drill-down)
-for (const d of [P, D].filter(Boolean)) for (const r of kwOn(d).filter(r => r.key === '1'))
-  out.push(['kt', d, r.keyword, num(r.total_hits), org(r), num(r.prazdroj_best_org_pos), r.ad1_brand, r.ad1_promo, r.ad1_hold || '',
-    r.ad4_brand, r.ad4_promo, r.ad4_hold || '', (r.brands_top20 || '').split(' | ').slice(0, 3).join(' | '), d === D ? r.prazdroj_positions : '']);
-// kh – key-term history over the last 12 runs of any kind (full + 13:07/17:07 checks): ad rotation during the day
-const allRuns = [...new Set(kwEvery.map(runId))].sort().slice(-12);
-for (const id of allRuns) for (const r of kwEvery.filter(r => runId(r) === id && r.key === '1'))
-  out.push(['kh', id, r.keyword, org(r), num(r.prazdroj_best_org_pos), r.ad1_brand, r.ad1_hold || '', r.ad4_brand, r.ad4_hold || '']);
-// ad – sponsored slots by brand (latest)
+// kt – key terms aggregated over every run in the window (full + 13:07/17:07 checks), plus the latest values
 const latest = kwOn(D).filter(r => num(r.total_hits) > 0);
+const latestBy = Object.fromEntries(latest.map(r => [r.keyword, r]));
+for (const r of latest.filter(r => r.key === '1')) {
+  const all = (byKw[r.keyword] || []).filter(x => num(x.total_hits) > 0), n = all.length;
+  const slot = s => { const [b, k] = mode(all.map(x => x[`ad${s}_brand`])); const pr = b ? all.filter(x => x[`ad${s}_brand`] === b && x[`ad${s}_promo`]).length : 0;
+    return [b || '', b && pr * 2 >= k ? '*' : '', b ? `${k}/${n}` : '']; };
+  const bc = {};
+  fullOf(all).forEach(x => (x.brands_top20 || '').split(' | ').forEach(y => { const m = y.match(/^(.*):(\d+)$/); if (m) bc[m[1]] = (bc[m[1]] || 0) + Number(m[2]); }));
+  const nf = Math.max(1, fullOf(all).length);
+  const top3 = Object.entries(bc).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([b, c]) => `${b}:${r1(c / nf)}`).join(' | ');
+  out.push(['kt', D, r.keyword, num(r.total_hits), r3(avg(all.map(org))), median(all.map(x => num(x.prazdroj_best_org_pos))),
+    ...slot(1), ...slot(4), top3, r.prazdroj_positions, org(r), num(r.prazdroj_best_org_pos), n]);
+}
+// kh – key-term history, every run in the window
+for (const id of WA) for (const r of kwEvery.filter(r => runId(r) === id && r.key === '1'))
+  zl.push(['kh', id, r.keyword, org(r), num(r.prazdroj_best_org_pos), r.ad1_brand, r.ad1_hold || '', r.ad4_brand, r.ad4_hold || '']);
+// ad – sponsored slots by brand: average number of keywords per full run
 const ab = {};
-for (const r of latest) for (const [s, b, p] of [[1, r.ad1_brand, r.ad1_promo], [4, r.ad4_brand, r.ad4_promo]]) if (b) {
+for (const d of WF) for (const r of kwOn(d)) for (const [s, b, p] of [[1, r.ad1_brand, r.ad1_promo], [4, r.ad4_brand, r.ad4_promo]]) if (b) {
   ab[b] ??= [0, 0, 0]; ab[b][s === 1 ? 0 : 1]++; if (p) ab[b][2]++;
 }
 Object.entries(ab).sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1])).slice(0, 25)
-  .forEach(([b, [s1, s4, pr]]) => out.push(['ad', D, b, s1, s4, pr, isOwn(b) ? 1 : 0]));
-// br – brand presence on non-brand searches (latest): keywords where the brand is in the top 20, average places held
-const nonBrand = latest.filter(r => segOf(r) !== 'brand');
+  .forEach(([b, [s1, s4, pr]]) => out.push(['ad', D, b, r1(s1 / N), r1(s4 / N), r1(pr / N), isOwn(b) ? 1 : 0]));
+// br – brand presence on non-brand searches: averages per full run
 const bp = {};
-for (const r of nonBrand) for (const x of (r.brands_top20 || '').split(' | ')) {
-  const m = x.match(/^(.*):(\d+)$/); if (!m) continue;
-  bp[m[1]] ??= [0, 0]; bp[m[1]][0]++; bp[m[1]][1] += Number(m[2]);
-}
+let nbRows = 0;
+for (const d of WF) { const nb = kwOn(d).filter(r => num(r.total_hits) > 0 && segOf(r) !== 'brand'); nbRows += nb.length;
+  for (const r of nb) for (const x of (r.brands_top20 || '').split(' | ')) { const m = x.match(/^(.*):(\d+)$/); if (!m) continue; bp[m[1]] ??= [0, 0]; bp[m[1]][0]++; bp[m[1]][1] += Number(m[2]); } }
 Object.entries(bp).filter(([b]) => b !== 'bez značky').sort((a, b) => b[1][1] - a[1][1])
   .filter(([b], i) => i < 25 || isOwn(b))
-  .forEach(([b, [kw, places]]) => out.push(['br', D, b, isOwn(b) ? 1 : 0, kw, r3(places / Math.max(1, nonBrand.length)), ab[b]?.[0] || 0, ab[b]?.[1] || 0]));
-// cq – competitor ads on Prazdroj brand searches (latest)
-conquestOf(latest).slice(0, 40).forEach(x => out.push(['cq', D, ...x]));
-// sk – SKUs: linked keywords from config; seen/found/positions from the positions history
+  .forEach(([b, [kw, places]]) => out.push(['br', D, b, isOwn(b) ? 1 : 0, r1(kw / N), r3(places / Math.max(1, nbRows)), r1((ab[b]?.[0] || 0) / N), r1((ab[b]?.[1] || 0) / N)]));
+// cq – competitor ads on Prazdroj brand searches, every full run: how many runs each (keyword, slot, brand) was seen
+const cqc = {};
+for (const d of WF) for (const [k, s, b, p] of conquestOf(kwOn(d))) { const key = [k, s, b].join('|'); (cqc[key] ??= { k, s, b, n: 0, p: '' }).n++; if (p) cqc[key].p = p; }
+Object.values(cqc).sort((a, b) => b.n - a.n).slice(0, 60).forEach(x => out.push(['cq', D, x.k, x.s, x.b, x.p, `${x.n}/${N}`]));
+// sk – SKUs over every full run: average keywords seen/found/top 10, median and best position across all runs; latest for comparison
 const linked = {};
 cfg.keywords.forEach(([k, g, c, p]) => [...c, ...p].forEach(i => { const pid = String(cfg.skuList[i][0]); linked[pid] = (linked[pid] || 0) + 1; }));
-const sD = skuStats(D), sP = P ? skuStats(P) : {};
-for (const [pid] of cfg.skuList) {
-  const a = sD[pid] || { seen: 0, found: 0, pos: [], top10: 0 }, b = sP[pid];
-  out.push(['sk', D, String(pid), linked[pid] || 0, a.found, a.seen, a.top10, median(a.pos), a.pos.length ? Math.min(...a.pos) : null,
-    b ? b.seen : null, b ? median(b.pos) : null, controls.has(String(pid)) ? 1 : 0]);
+const stW = WF.map(skuStats), sD = skuStats(D);
+for (const [pid] of cfg.skuList.map(([p]) => [String(p)])) {
+  const xs = stW.map(s => s[pid] || { seen: 0, found: 0, pos: [], top10: 0 }), a = sD[pid];
+  const allPos = xs.flatMap(x => x.pos);
+  out.push(['sk', D, pid, linked[pid] || 0, r1(avg(xs.map(x => x.found))), r1(avg(xs.map(x => x.seen))), r1(avg(xs.map(x => x.top10))),
+    median(allPos), allPos.length ? Math.min(...allPos) : null, a ? a.seen : 0, a ? median(a.pos) : null, controls.has(pid) ? 1 : 0]);
 }
-// gp – current backend keywords where none of the linked SKUs shows (latest)
-latest.filter(r => /(^|\+)c(\+|$)/.test(r.groups) && num(r.linked_skus) > 0 && num(r.linked_found) === 0)
-  .slice(0, 60).forEach(r => out.push(['gp', D, r.keyword, num(r.linked_skus), num(r.total_hits), (r.brands_top20 || '').split(' | ')[0] || '']));
-// ba – before / after go-live per SKU (Michal's two measures):
-//   1) new visibility: on how many of its NEW (planned) keywords the SKU appears in the top 100
-//   2) position shift: median organic position on all its assigned keywords (current + new)
-// before = average over full runs before the first go-live date (all runs so far if none logged); after = latest full run on/after it
-const G = (cfg.golive || []).map(g => g.date).sort()[0] || null;
+// gp – current backend keywords where no linked SKU showed in ANY full run of the window
+const foundEver = {};
+for (const d of WF) for (const r of kwOn(d)) if (num(r.linked_found) > 0) foundEver[r.keyword] = true;
+latest.filter(r => /(^|\+)c(\+|$)/.test(r.groups) && num(r.linked_skus) > 0 && !foundEver[r.keyword])
+  .slice(0, 60).forEach(r => out.push(['gp', D, r.keyword, num(r.linked_skus), num(r.total_hits), (r.brands_top20 || '').split(' | ')[0] || '', N]));
+// ba – before / after go-live per SKU: before = average of ALL full runs before the first go-live date, after = average of ALL runs since
 const preRuns = runs.filter(id => !G || id.slice(0, 10) < G), postRuns = G ? runs.filter(id => id.slice(0, 10) >= G) : [];
 const assigned = {};
 cfg.keywords.forEach(([k, g, c, p]) => {
@@ -131,89 +153,100 @@ const baStats = id => {
   }
   return s;
 };
-const preS = preRuns.slice(-7).map(baStats), postS = postRuns.length ? baStats(postRuns.at(-1)) : null;
-const r1 = x => x == null ? null : Math.round(x * 10) / 10;
-for (const [pid] of cfg.skuList.map(([p]) => [String(p)])) {
+const preS = preRuns.map(baStats), postS = postRuns.map(baStats);
+for (const pid of cfg.skuList.map(([p]) => String(p))) {
   const a = assigned[pid] || { cur: 0, neu: 0 };
-  const bNew = r1(avg(preS.map(s => s[pid]?.neu.size || 0))), bCur = r1(avg(preS.map(s => s[pid]?.cur.size || 0)));
-  const bMed = median(preS.map(s => median(s[pid]?.pos || [])));
-  const p = postS?.[pid];
-  out.push(['ba', D, pid, a.neu, bNew, postS ? (p?.neu.size || 0) : null, bMed, postS ? median(p?.pos || []) : null, a.cur, bCur, postS ? (p?.cur.size || 0) : null]);
+  const agg = S => S.length ? [r1(avg(S.map(s => s[pid]?.neu.size || 0))), median(S.flatMap(s => s[pid]?.pos || [])), r1(avg(S.map(s => s[pid]?.cur.size || 0)))] : [null, null, null];
+  const [bNew, bMed, bCur] = agg(preS), [pNew, pMed, pCur] = agg(postS);
+  out.push(['ba', D, pid, a.neu, bNew, pNew, bMed, pMed, a.cur, bCur, pCur]);
 }
-out.push(['bag', D, G || '', Math.min(preRuns.length, 7), postRuns.length]);
-// gl – go-live log (dated markers on the trend)
+out.push(['bag', D, G || '', preRuns.length, postRuns.length]);
 for (const g of cfg.golive || []) out.push(['gl', g.date, (g.keywords || []).length, (g.pids || []).length, g.note || '']);
-// cfg – facts the page shows
-out.push(['cfg', D, controls.size, (cfg.golive || []).length, cfg.baselineUntil || '']);
+out.push(['cfg', D, controls.size, (cfg.golive || []).length, cfg.baselineUntil || '', N, WF[0] || '', WA.length]);
 
-// ins – rule-based notes; a share move counts when it held for two runs in a row, or is 20+ pts in one run
-const ins = [];
-const pct = x => Math.round(x * 100) + ' %';
-const by = id => id ? Object.fromEntries(kwOn(id).filter(r => r.key === '1').map(r => [r.keyword, r])) : {};
-const ktD = by(D), ktP = by(P), ktPP = by(PP);
-if (P) {
-  const moves = Object.keys(ktD).filter(k => ktP[k] && org(ktD[k]) != null && org(ktP[k]) != null).map(k => {
-    const d1 = org(ktD[k]) - org(ktP[k]);
-    const d0 = ktPP[k] && org(ktPP[k]) != null ? org(ktP[k]) - org(ktPP[k]) : null;
-    const lasting = d0 != null && Math.sign(d0) === Math.sign(d1) && Math.abs(d0) >= 0.05;
-    return [k, d1, lasting, num(ktD[k].total_hits)];
-  }).filter(([, d1, lasting]) => Math.abs(d1) >= 0.2 || (lasting && Math.abs(d1) >= 0.1))
-    .sort((a, b) => b[3] - a[3]);
-  moves.slice(0, 3).forEach(([k, d, lasting]) => ins.push(['ins', D, d > 0 ? 'up' : 'down',
-    `„${k}“: podíl Prazdroje v organické top 20 ${d > 0 ? 'vzrostl' : 'klesl'} o ${Math.round(Math.abs(d) * 100)} b. na ${pct(org(ktD[k]))}${lasting ? ', druhé měření po sobě' : ''}.`]));
-  const adCh = [];
-  for (const k of Object.keys(ktD)) for (const s of ['1', '4']) {
-    const b = ktD[k][`ad${s}_brand`], a = ktP[k]?.[`ad${s}_brand`], hold = ktD[k][`ad${s}_hold`];
-    const firm = !hold || /^(\d+)\/\1$/.test(hold) || Number(hold.split('/')[0]) >= 2;   // seen in most passes
-    if (b && b !== a && !isOwn(b) && firm) adCh.push([num(ktD[k].total_hits), ['ins', D, 'watch',
-      `„${k}“: ${b} získal sponzorovanou pozici ${s}${ktD[k][`ad${s}_promo`] ? ' s akcí ' + ktD[k][`ad${s}_promo`] : ''}${hold ? ' (' + hold + ' načtení)' : ''}, předtím ${a || 'nikdo'}.`]]);
-  }
-  adCh.sort((a, b) => b[0] - a[0]).slice(0, 3).forEach(([, x]) => ins.push(x));
-  const lost = cfg.skuList.map(([pid, br]) => [String(pid), br]).filter(([pid]) => sP[pid] && (sD[pid]?.seen || 0) < sP[pid].seen - 2)
-    .sort((a, b) => (sP[b[0]].seen - (sD[b[0]]?.seen || 0)) - (sP[a[0]].seen - (sD[a[0]]?.seen || 0)));
-  lost.slice(0, 2).forEach(([pid, br]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${sD[pid]?.seen || 0} dotazech, o ${sP[pid].seen - (sD[pid]?.seen || 0)} méně než v minulém měření.`]));
-  const cqP = new Set(conquestOf(kwOn(P)).map(x => x.join('|')));
-  conquestOf(latest).filter(x => !cqP.has(x.join('|'))).slice(0, 2).forEach(([k, s, b, p]) => ins.push(['ins', D, 'watch', `Nová reklama konkurence na značkovém dotazu Prazdroje: ${b} na pozici ${s} u „${k}“${p ? ' (' + p + ')' : ''}.`]));
-}
-Object.values(ktD).filter(r => num(r.total_hits) >= 20 && org(r) != null).sort((a, b) => org(a) - org(b)).slice(0, 2)
-  .forEach(r => ins.push(['ins', D, 'gap', `Nejslabší klíčový dotaz: „${r.keyword}“ – Prazdroj má ${pct(org(r))} organické top 20 (${r.total_hits} výsledků).`]));
-const t = out.filter(x => x[0] === 'tr').at(-1);
-if (t) ins.push(['ins', D, 'info', `Prazdroj drží sponzorovanou pozici 1 na ${t[8]} z ${t[9]} dotazů s reklamou a pozici 4 na ${t[10]} z ${t[11]}; ${Math.round(t[12] / Math.max(1, t[9] + t[11]) * 100)} % všech reklam běží s akcí.`]);
-
-// kq – every keyword of the latest full run: where it is assigned (backend now / POS Media recommendation), what Rohlík shows
-//      in the top 5 and which of those products are discounted. pq – names of non-Prazdroj products in those top 5.
-//      Both go out gzip+base64 ("~" lines) – ~860 keywords would otherwise need 20+ e-mails.
+// kq / pq / qs – every query aggregated over all full runs in the window
 const idxOf = Object.fromEntries(cfg.skuList.map(([pid], i) => [String(pid), i]));
 const liveOn = new Map();
 for (const g of cfg.golive || []) for (const p of g.pids || []) for (const k of g.keywords || []) liveOn.set(`${p}|${k.toLowerCase()}`, g.date);
-const discOfPromo = p => { if (!p) return ''; const m = [...String(p).matchAll(/-(\d+)%/g)].map(x => Number(x[1])); return m.length && Math.max(...m) > 0 ? String(Math.max(...m)) : 'y'; };
-const posD = {};
-for (const r of posOn(D)) (posD[r.keyword] ??= []).push(r);
+const posW = {};
+for (const d of WF) for (const r of posOn(d)) ((posW[r.keyword] ??= {})[r.pid] ??= []).push(r);
 const kwCfg = Object.fromEntries(cfg.keywords.map(([k, g, c, p, key]) => [k, { c, p, key }]));
-const zl = [], shown = new Set();
+const shown = new Set();
 let slots = 0, slotsDisc = 0;
 const ownDisc = [], ownFull = [];
 for (const r of latest) {
   const c = kwCfg[r.keyword]; if (!c) continue;
+  const all = fullOf(byKw[r.keyword] || []).filter(x => num(x.total_hits) > 0);
   const plan = c.p.map(i => { const d = liveOn.get(`${cfg.skuList[i][0]}|${r.keyword.toLowerCase()}`); return d ? `${i}@${d}` : String(i); });
-  const pos = (posD[r.keyword] || []).filter(x => idxOf[x.pid] != null && x.org_pos !== '').map(x => {
-    const d = discOfPromo(x.promo); (d ? ownDisc : ownFull).push(num(x.org_pos));
-    return `${idxOf[x.pid]}:${x.org_pos}:${d}${x.sponsored === '1' ? ':a' : ''}`;
-  }).join(' ');
-  const top = (r.top5 || '').split(' ').filter(Boolean);
-  top.forEach(x => { const [pid, , d] = x.split(':'); slots++; if (d) slotsDisc++; if (idxOf[pid] == null) shown.add(pid); });
-  zl.push(['kq', D, r.keyword, c.key ? 1 : 0, c.c.join(' '), plan.join(' '), org(r), num(r.prazdroj_best_org_pos), pos, r.top5 || '', num(r.promo_top20), num(r.total_hits)]);
+  // own SKUs: median organic position over the runs it was found, runs found, runs discounted, latest discount
+  const pos = Object.entries(posW[r.keyword] || {}).filter(([pid]) => idxOf[pid] != null).map(([pid, rs]) => {
+    const found = rs.filter(x => x.org_pos !== '');
+    found.forEach(x => (discOfPromo(x.promo) ? ownDisc : ownFull).push(num(x.org_pos)));
+    if (!found.length) return null;
+    const last = rs.find(x => runId(x) === D);
+    return `${idxOf[pid]}:${median(found.map(x => num(x.org_pos)))}:${found.filter(x => discOfPromo(x.promo)).length}:${found.length}:${last ? discOfPromo(last.promo) : ''}`;
+  }).filter(Boolean).join(' ');
+  // what Rohlík shows: products in the top 5 most often across runs that recorded it
+  const withTop = all.filter(x => x.top5), nt = withTop.length, tc = {};
+  withTop.forEach(x => x.top5.split(' ').filter(Boolean).forEach((y, k) => {
+    const [pid, a, d] = y.split(':'); const t = tc[pid] ??= { n: 0, pos: 0, ad: 0, dn: 0, dmax: 0 };
+    t.n++; t.pos += k + 1; if (a === 'a') t.ad++; slots++;
+    if (d) { t.dn++; slotsDisc++; t.dmax = Math.max(t.dmax, d === 'y' ? 0 : Number(d)); }
+  }));
+  const top = Object.entries(tc).sort((a, b) => b[1].n - a[1].n || a[1].pos / a[1].n - b[1].pos / b[1].n).slice(0, 5)
+    .sort((a, b) => a[1].pos / a[1].n - b[1].pos / b[1].n);
+  top.forEach(([pid]) => { if (idxOf[pid] == null) shown.add(pid); });
+  const topStr = top.map(([pid, t]) => `${pid}:${t.ad * 2 > t.n ? 'a' : 'o'}:${t.dn ? (t.dmax || 'y') : ''}:${t.n}:${r1(t.pos / t.n)}:${t.dn}`).join(' ');
+  zl.push(['kq', D, r.keyword, c.key ? 1 : 0, c.c.join(' '), plan.join(' '), r3(avg(all.map(org))), median(all.map(x => num(x.prazdroj_best_org_pos))),
+    pos, topStr, r1(avg(withTop.map(x => num(x.promo_top20)))), num(r.total_hits), all.length, nt]);
 }
 const PROD = `history/${cfg.client}_products.json`;
 const prod = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
 for (const pid of shown) zl.push(['pq', D, pid, prod[pid]?.[0] || '', (prod[pid]?.[1] || '').slice(0, 40)]);
 const mD = median(ownDisc), mF = median(ownFull);
 out.push(['qs', D, slots, slotsDisc, mD, mF, ownDisc.length, ownFull.length]);
+
+// ins – notes: the latest full run against the average of ALL earlier runs in the window
+const ins = [];
+const pct = x => Math.round(x * 100) + ' %';
+const prior = WF.filter(id => id < D), NP = prior.length;
+if (NP) {
+  const kRows = latest.filter(r => r.key === '1');
+  const moves = kRows.map(r => {
+    const before = (byKw[r.keyword] || []).filter(x => runId(x) < D && num(x.total_hits) > 0).map(org);
+    const b = avg(before); return [r.keyword, b == null || org(r) == null ? null : org(r) - b, before.length, num(r.total_hits)];
+  }).filter(([, d, n]) => d != null && n >= 2 && Math.abs(d) >= 0.1).sort((a, b) => b[3] - a[3]);
+  moves.slice(0, 3).forEach(([k, d, n]) => ins.push(['ins', D, d > 0 ? 'up' : 'down',
+    `„${k}“: podíl Prazdroje v organické top 20 je ${pct(org(latestBy[k]))}, o ${Math.round(Math.abs(d) * 100)} b. ${d > 0 ? 'nad' : 'pod'} průměrem ${n} předchozích měření.`]));
+  const adCh = [];
+  for (const r of kRows) for (const s of ['1', '4']) {
+    const b = r[`ad${s}_brand`], hold = r[`ad${s}_hold`];
+    const firm = !hold || /^(\d+)\/\1$/.test(hold) || Number(hold.split('/')[0]) >= 2;
+    if (!b || isOwn(b) || !firm) continue;
+    const before = (byKw[r.keyword] || []).filter(x => runId(x) < D), had = before.filter(x => x[`ad${s}_brand`] === b).length;
+    if (before.length >= 2 && had * 3 <= before.length) adCh.push([num(r.total_hits), ['ins', D, 'watch',
+      `„${r.keyword}“: ${b} drží sponzorovanou pozici ${s}${r[`ad${s}_promo`] ? ' s akcí ' + r[`ad${s}_promo`] : ''}${hold ? ' (' + hold + ' načtení)' : ''}; v předchozích ${before.length} měřeních ji měl jen ${had}×.`]]);
+  }
+  adCh.sort((a, b) => b[0] - a[0]).slice(0, 3).forEach(([, x]) => ins.push(x));
+  const avgSeen = pid => avg(prior.map(id => skuStats(id)[pid]?.seen || 0));
+  const seenAvg = Object.fromEntries(cfg.skuList.map(([p]) => [String(p), avgSeen(String(p))]));
+  cfg.skuList.map(([pid, br]) => [String(pid), br]).map(([pid, br]) => [pid, br, (sD[pid]?.seen || 0) - seenAvg[pid]])
+    .filter(x => x[2] <= -3).sort((a, b) => a[2] - b[2]).slice(0, 2)
+    .forEach(([pid, br, d]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${sD[pid]?.seen || 0} dotazech, o ${Math.round(-d)} méně než je průměr předchozích ${NP} měření.`]));
+  const seenCq = new Set(prior.flatMap(id => conquestOf(kwOn(id)).map(x => x.slice(0, 3).join('|'))));
+  conquestOf(latest).filter(x => !seenCq.has(x.slice(0, 3).join('|'))).slice(0, 2).forEach(([k, s, b, p]) =>
+    ins.push(['ins', D, 'watch', `Poprvé za ${NP + 1} měření: reklama konkurence na značkovém dotazu Prazdroje – ${b} na pozici ${s} u „${k}“${p ? ' (' + p + ')' : ''}.`]));
+}
+out.filter(x => x[0] === 'kt' && x[4] != null && x[3] >= 20).sort((a, b) => a[4] - b[4]).slice(0, 2)
+  .forEach(x => ins.push(['ins', D, 'gap', `Nejslabší klíčový dotaz: „${x[2]}“ – Prazdroj má v průměru ${pct(x[4])} organické top 20 (${x[16]} měření).`]));
+const trW = zl.filter(x => x[0] === 'tr' && WF.includes(`${x[1]} ${x[2]}`));
+if (trW.length) { const s = i => trW.reduce((a, x) => a + (x[i] || 0), 0);
+  ins.push(['ins', D, 'info', `Za ${trW.length} plných měření drží Prazdroj sponzorovanou pozici 1 v průměru na ${Math.round(s(8) / trW.length)} z ${Math.round(s(9) / trW.length)} dotazů s reklamou a pozici 4 na ${Math.round(s(10) / trW.length)} z ${Math.round(s(11) / trW.length)}; ${Math.round(s(12) / Math.max(1, s(9) + s(11)) * 100)} % reklam běží s akcí.`]); }
 if (slots && ownDisc.length >= 5 && ownFull.length >= 5) ins.push(['ins', D, 'info',
   `Slevy: v top 5 výsledků je ve slevě ${Math.round(slotsDisc / slots * 100)} % produktů. SKU Prazdroje ve slevě mají medián organické pozice ${mD}, bez slevy ${mF} (souvislost, ne nutně příčina).`]);
-out.push(...ins.slice(0, 11));
+out.push(...ins.slice(0, 12));
 
-// write parts: ≤ 9,000 chars each, JSON lines inside a code fence
+// write parts: ≤ 9,000 chars each; small tables as JSON lines, large ones gzip+base64 in "~NNNN" lines
 const lines = out.map(x => JSON.stringify(x));
 if (zl.length) {
   const b64 = zlib.gzipSync(zl.map(x => JSON.stringify(x)).join('\n'), { level: 9 }).toString('base64');
@@ -225,4 +258,4 @@ if (cur.length) parts.push(cur);
 fs.mkdirSync('out', { recursive: true });
 parts.forEach((p, i) => fs.writeFileSync(`out/part_${900 + i}_dash.csv`,
   `# ${cfg.client} ${D} mode=full dash ${i + 1}/${parts.length} (dash)\n\`\`\`\n${p.join('\n')}\n\`\`\`\n# end\n`));
-console.log(`dash: ${D} vs ${P || '-'}: ${lines.length} lines, ${parts.length} part(s)`);
+console.log(`dash: ${D}, window ${N} full / ${WA.length} all runs: ${lines.length} lines, ${parts.length} part(s)`);
