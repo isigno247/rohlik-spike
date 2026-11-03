@@ -39,6 +39,13 @@ const promoOf = p => {
   if (p.goodPrice) s.push(`goodPrice -${p.goodPriceSalePercentage || 0}%`);
   return s.join(' + ');
 };
+// discount in % (max over sale types); 'y' = on promo without a stated %; '' = full price
+const discOf = p => {
+  const v = [...(p.sales || []).map(x => x.discountPercentage || 0), p.goodPrice ? (p.goodPriceSalePercentage || 0) : null].filter(x => x != null);
+  if (!v.length) return '';
+  const m = Math.round(Math.max(...v));
+  return m > 0 ? String(m) : 'y';
+};
 const brandOf = p => (typeof p.brand === 'string' ? p.brand : p.brand?.name) || 'bez značky';
 
 function snapshot(d) {
@@ -50,7 +57,7 @@ function snapshot(d) {
     const p = byId.get(id) || {};
     const ad = ads.has(id);
     if (!ad) org++;
-    return { id, pos: i + 1, org: ad ? null : org, ad, brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p) };
+    return { id, pos: i + 1, org: ad ? null : org, ad, brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p), disc: discOf(p) };
   });
   return { total: d.totalHits ?? ids.length, rows };
 }
@@ -65,6 +72,9 @@ async function main() {
 
   const list = cfg.keywords.filter(k => MODE === 'key' ? k[4] === 1 : true);
   const kwRows = [], posRows = [];
+  // product names for everything shown in the top 5 (the dashboard needs competitor names)
+  const PROD = `history/${cfg.client}_products.json`;
+  const products = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
   let n = 0;
   for (const [k, groups, cur, plan, key] of list) {
     const snaps = [];
@@ -125,7 +135,12 @@ async function main() {
       prazdroj_positions: ownPositions.join(' '),
       linked_skus: linked.size, linked_found: [...linked].filter(p => s0.rows.some(r => r.id === p)).length,
       brands_top20: Object.entries(brandCount).sort((a, b) => b[1] - a[1]).map(([b, c]) => `${b}:${c}`).join(' | '),
-      ad1_hold: ad1Hold, ad4_hold: ad4Hold });
+      ad1_hold: ad1Hold, ad4_hold: ad4Hold,
+      // what Rohlík shows: first 5 products of the first page load, "pid:a|o:discount" (a = sponsored, o = organic)
+      top5: s0.rows.slice(0, 5).map(r => `${r.id}:${r.ad ? 'a' : 'o'}:${r.disc}`).join(' '),
+      promo_top20: s0.rows.slice(0, cfg.topN).filter(r => r.disc).length,
+      prazdroj_disc: s0.rows.filter(r => cfg.skus[r.id] && r.disc).map(r => `${r.id}:${r.disc}`).join(' ') });
+    for (const r of s0.rows.slice(0, 5)) products[r.id] = [r.brand, r.name];
   }
 
   fs.mkdirSync('history', { recursive: true }); fs.mkdirSync('out', { recursive: true });
@@ -142,6 +157,7 @@ async function main() {
     fs.appendFileSync(file, body + '\n');
     return cols.join(',') + '\n' + body + '\n';
   };
+  fs.writeFileSync(PROD, JSON.stringify(products));
   const kwCsv = write(kwRows, 'keywords');
   const posCsv = write(posRows, 'positions');
 
