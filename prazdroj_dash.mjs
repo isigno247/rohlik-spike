@@ -121,15 +121,28 @@ Object.entries(bp).filter(([b]) => b !== 'bez značky').sort((a, b) => b[1][1] -
 const cqc = {};
 for (const d of WF) for (const [k, s, b, p] of conquestOf(kwOn(d))) { const key = [k, s, b].join('|'); (cqc[key] ??= { k, s, b, n: 0, p: '' }).n++; if (p) cqc[key].p = p; }
 Object.values(cqc).sort((a, b) => b.n - a.n).slice(0, 60).forEach(x => out.push(['cq', D, x.k, x.s, x.b, x.p, `${x.n}/${N}`]));
-// sk – SKUs over every full run: average keywords seen/found/top 10, median and best position across all runs; latest for comparison
-const linked = {};
-cfg.keywords.forEach(([k, g, c, p]) => [...c, ...p].forEach(i => { const pid = String(cfg.skuList[i][0]); linked[pid] = (linked[pid] || 0) + 1; }));
-const stW = WF.map(skuStats), sD = skuStats(D);
-for (const [pid] of cfg.skuList.map(([p]) => [String(p)])) {
-  const xs = stW.map(s => s[pid] || { seen: 0, found: 0, pos: [], top10: 0 }), a = sD[pid];
-  const allPos = xs.flatMap(x => x.pos);
-  out.push(['sk', D, pid, linked[pid] || 0, r1(avg(xs.map(x => x.found))), r1(avg(xs.map(x => x.seen))), r1(avg(xs.map(x => x.top10))),
-    median(allPos), allPos.length ? Math.min(...allPos) : null, a ? a.seen : 0, a ? median(a.pos) : null, controls.has(pid) ? 1 : 0]);
+// sk – SKUs, simple view: keywords in the backend vs new suggested keywords, and on how many of each the SKU is in the
+//      organic top 20 (average over all full runs, whole numbers); typical organic position on its assigned keywords
+const nCur = {}, nNew = {};
+cfg.keywords.forEach(([k, g, c, p]) => { c.forEach(i => { const q = String(cfg.skuList[i][0]); nCur[q] = (nCur[q] || 0) + 1; });
+  p.forEach(i => { const q = String(cfg.skuList[i][0]); nNew[q] = (nNew[q] || 0) + 1; }); });
+const skTop = id => {               // pid -> [backend kw in top 20, new kw in top 20, organic positions on assigned kw]
+  const s = {};
+  for (const r of posOn(id)) {
+    if (r.kw_status === 'not linked') continue;
+    const x = s[r.pid] ??= [0, 0, []], o = num(r.org_pos);
+    if (o == null) continue;
+    x[2].push(o);
+    if (o <= 20) x[r.kw_status === 'current' ? 0 : 1]++;
+  }
+  return s;
+};
+const tW = WF.map(skTop), sD = skuStats(D);
+for (const pid of cfg.skuList.map(([p]) => String(p))) {
+  const xs = tW.map(s => s[pid] || [0, 0, []]);
+  const rd = x => x == null ? null : Math.round(x);
+  out.push(['sk', D, pid, nCur[pid] || 0, rd(avg(xs.map(x => x[0]))), nNew[pid] || 0, rd(avg(xs.map(x => x[1]))),
+    median(xs.flatMap(x => x[2])), controls.has(pid) ? 1 : 0]);
 }
 // gp – current backend keywords where no linked SKU showed in ANY full run of the window
 const foundEver = {};
