@@ -139,7 +139,15 @@ async function main() {
       // what Rohlík shows: first 5 products of the first page load, "pid:a|o:discount" (a = sponsored, o = organic)
       top5: s0.rows.slice(0, 5).map(r => `${r.id}:${r.ad ? 'a' : 'o'}:${r.disc}`).join(' '),
       promo_top20: s0.rows.slice(0, cfg.topN).filter(r => r.disc).length,
-      prazdroj_disc: s0.rows.filter(r => cfg.skus[r.id] && r.disc).map(r => `${r.id}:${r.disc}`).join(' ') });
+      prazdroj_disc: s0.rows.filter(r => cfg.skus[r.id] && r.disc).map(r => `${r.id}:${r.disc}`).join(' '),
+      // best organic position per brand (median over passes), brands that reach the organic top 50 – ranking trend per brand
+      brand_best: (() => {
+        const per = {};
+        snaps.forEach(sn => { const b = {}; sn.rows.forEach(r => { if (r.org != null && r.org <= 50 && !(r.brand in b)) b[r.brand] = r.org; });
+          Object.entries(b).forEach(([k, v]) => (per[k] ??= []).push(v)); });
+        return Object.entries(per).map(([k, v]) => [k, median(v)]).sort((a, b) => a[1] - b[1]).slice(0, 15)
+          .map(([k, v]) => `${k.replace(/[|:]/g, ' ')}:${v}`).join('|');
+      })() });
     for (const r of s0.rows.slice(0, 5)) products[r.id] = [r.brand, r.name];
   }
 
