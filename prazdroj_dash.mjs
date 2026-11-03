@@ -231,6 +231,20 @@ for (const r of latest) {
 const PROD = `history/${cfg.client}_products.json`;
 const prod = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
 for (const pid of shown) zl.push(['pq', D, pid, prod[pid]?.[0] || '', (prod[pid]?.[1] || '').slice(0, 40)]);
+// sq – SKU view: every keyword assigned to each SKU (backend or suggested) with its organic position in the last 14 full runs
+//      (empty = not in top 100) and a reference position: median before go-live, or median of the first 3 runs if no go-live yet
+const SQ = runs.slice(-14);
+zl.push(['sqr', D, SQ.join('|'), G || '']);
+const posByRun = SQ.map(id => { const m = {}; for (const r of posOn(id)) if (r.org_pos !== '') m[r.pid + '|' + r.keyword] = num(r.org_pos); return m; });
+const preMed = {};
+if (G) { for (const id of preRuns) for (const r of posOn(id)) if (r.org_pos !== '') (preMed[r.pid + '|' + r.keyword] ??= []).push(num(r.org_pos)); }
+const firstRuns = runs.slice(0, 3).map(id => { const m = {}; for (const r of posOn(id)) if (r.org_pos !== '') m[r.pid + '|' + r.keyword] = num(r.org_pos); return m; });
+for (const [k, g, c, p] of cfg.keywords) for (const [list, role] of [[c, 'c'], [p, 'p']]) for (const i of list) {
+  const pid = String(cfg.skuList[i][0]), key = pid + '|' + k;
+  const ser = posByRun.map(m => m[key] ?? '').join(',');
+  const ref = G ? median(preMed[key] || []) : median(firstRuns.map(m => m[key]).filter(x => x != null));
+  zl.push(['sq', D, i, k, role, ser, ref]);
+}
 const mD = median(ownDisc), mF = median(ownFull);
 out.push(['qs', D, slots, slotsDisc, mD, mF, ownDisc.length, ownFull.length]);
 
