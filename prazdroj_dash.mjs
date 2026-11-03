@@ -235,7 +235,12 @@ for (const pid of shown) zl.push(['pq', D, pid, prod[pid]?.[0] || '', (prod[pid]
 //      (empty = not in top 100) and a reference position: median before go-live, or median of the first 3 runs if no go-live yet
 const SQ = runs.slice(-14);
 zl.push(['sqr', D, SQ.join('|'), G || '']);
-const posByRun = SQ.map(id => { const m = {}; for (const r of posOn(id)) if (r.org_pos !== '') m[r.pid + '|' + r.keyword] = num(r.org_pos); return m; });
+// a SKU shown as a sponsored product is not listed organically at the same time (Rohlík de-duplicates):
+// record it as "a<position incl. ads>" so it is not mistaken for a lost keyword
+const posByRun = SQ.map(id => { const m = {}; for (const r of posOn(id)) {
+  if (r.org_pos !== '') m[r.pid + '|' + r.keyword] = num(r.org_pos);
+  else if (r.sponsored === '1' && r.pos_incl_ads !== '') m[r.pid + '|' + r.keyword] = 'a' + num(r.pos_incl_ads);
+} return m; });
 const preMed = {};
 if (G) { for (const id of preRuns) for (const r of posOn(id)) if (r.org_pos !== '') (preMed[r.pid + '|' + r.keyword] ??= []).push(num(r.org_pos)); }
 const firstRuns = runs.slice(0, 3).map(id => { const m = {}; for (const r of posOn(id)) if (r.org_pos !== '') m[r.pid + '|' + r.keyword] = num(r.org_pos); return m; });
