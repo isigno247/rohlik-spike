@@ -261,7 +261,7 @@ if (NP) {
   const moves = kRows.map(r => {
     const before = (byKw[r.keyword] || []).filter(x => runId(x) < D && num(x.total_hits) > 0).map(org);
     const b = avg(before); return [r.keyword, b == null || org(r) == null ? null : org(r) - b, before.length, num(r.total_hits)];
-  }).filter(([, d, n]) => d != null && n >= 2 && Math.abs(d) >= 0.1).sort((a, b) => b[3] - a[3]);
+  }).filter(([, d, n, h]) => d != null && n >= 2 && Math.abs(d) >= 0.1 && h <= 1000).sort((a, b) => b[3] - a[3]);   // > 1000 results = broad non-beer query
   moves.slice(0, 3).forEach(([k, d, n]) => ins.push(['ins', D, d > 0 ? 'up' : 'down',
     `„${k}“: share of search ${pct(org(latestBy[k]))}, o ${Math.round(Math.abs(d) * 100)} b. ${d > 0 ? 'nad' : 'pod'} průměrem.`]));
   const adCh = [];
@@ -270,7 +270,7 @@ if (NP) {
     const firm = !hold || /^(\d+)\/\1$/.test(hold) || Number(hold.split('/')[0]) >= 2;
     if (!b || isOwn(b) || !firm) continue;
     const before = (byKw[r.keyword] || []).filter(x => runId(x) < D), had = before.filter(x => x[`ad${s}_brand`] === b).length;
-    if (before.length >= 2 && had * 3 <= before.length) adCh.push([num(r.total_hits), ['ins', D, 'watch',
+    if (before.length >= 2 && had * 3 <= before.length && num(r.total_hits) <= 1000) adCh.push([num(r.total_hits), ['ins', D, 'watch',
       `„${r.keyword}“: ${b} má nově sponzorovanou pozici ${s}${r[`ad${s}_promo`] ? ' (se slevou)' : ''}; předtím jen ${had}× z ${before.length} měření.`]]);
   }
   adCh.sort((a, b) => b[0] - a[0]).slice(0, 3).forEach(([, x]) => ins.push(x));
@@ -283,7 +283,7 @@ if (NP) {
   conquestOf(latest).filter(x => !seenCq.has(x.slice(0, 3).join('|'))).slice(0, 2).forEach(([k, s, b, p]) =>
     ins.push(['ins', D, 'watch', `Nový conquesting: ${b} na sponzorované pozici ${s} u „${k}“${p ? ' (se slevou)' : ''}.`]));
 }
-zl.filter(x => x[0] === 'kq' && x[6] != null && x[11] >= 50 && segOf({ keyword: x[2] }) === 'generic').sort((a, b) => a[6] - b[6] || b[11] - a[11]).slice(0, 2)
+zl.filter(x => x[0] === 'kq' && x[6] != null && x[11] >= 50 && x[11] <= 1000 && segOf({ keyword: x[2] }) === 'generic').sort((a, b) => a[6] - b[6] || b[11] - a[11]).slice(0, 2)
   .forEach(x => ins.push(['ins', D, 'gap', `Slabý generický dotaz: „${x[2]}“ (${x[11]} výsledků) – share of search ${pct(x[6])}.`]));
 const trW = zl.filter(x => x[0] === 'tr' && WF.includes(`${x[1]} ${x[2]}`));
 if (trW.length) { const s = i => trW.reduce((a, x) => a + (x[i] || 0), 0);
