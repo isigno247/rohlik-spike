@@ -166,11 +166,17 @@ const skTop = id => {               // pid -> [backend kw in top 20, new kw in t
   return s;
 };
 const tW = WF.map(skTop), sD = skuStats(D);
+// content optimisation (config contentGolive: [{date, pids}]): median organic position on assigned keywords over ALL full runs
+// before that date (no date yet = every run so far) and after it
+const contentOn = Object.fromEntries((cfg.contentGolive || []).flatMap(g => (g.pids || []).map(p => [String(p), g.date])));
+const tAll = runs.map(id => [id.slice(0, 10), WF.includes(id) ? tW[WF.indexOf(id)] : skTop(id)]);
 for (const pid of cfg.skuList.map(([p]) => String(p))) {
   const xs = tW.map(s => s[pid] || [0, 0, []]);
   const rd = x => x == null ? null : Math.round(x);
+  const cd = contentOn[pid] || '', posAt = keep => tAll.filter(([d]) => keep(d)).flatMap(([, s]) => (s[pid] || [0, 0, []])[2]);
   out.push(['sk', D, pid, nCur[pid] || 0, rd(avg(xs.map(x => x[0]))), nNew[pid] || 0, rd(avg(xs.map(x => x[1]))),
-    median(xs.flatMap(x => x[2])), controls.has(pid) ? 1 : 0]);
+    median(xs.flatMap(x => x[2])), controls.has(pid) ? 1 : 0,
+    median(posAt(d => !cd || d < cd)), cd ? median(posAt(d => d >= cd)) : null, cd]);
 }
 // ba – before / after go-live per SKU: before = average of ALL full runs before the first go-live date, after = average of ALL runs since
 const preRuns = runs.filter(id => !G || id.slice(0, 10) < G), postRuns = G ? runs.filter(id => id.slice(0, 10) >= G) : [];
@@ -292,7 +298,7 @@ if (NP) {
     .forEach(([pid, br, d]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${sD[pid]?.seen || 0} dotazech, o ${Math.round(-d)} méně než průměr.`]));
   const seenCq = new Set(prior.flatMap(id => conquestOf(kwOn(id)).map(x => x.slice(0, 3).join('|'))));
   conquestOf(latest).filter(x => !seenCq.has(x.slice(0, 3).join('|'))).slice(0, 2).forEach(([k, s, b, p]) =>
-    ins.push(['ins', D, 'watch', `Nový conquesting: ${b} na sponzorované pozici ${s} u „${k}“${p ? ' (se slevou)' : ''}.`]));
+    ins.push(['ins', D, 'watch', `Nová reklama konkurence na brandovém dotazu: ${b} na sponzorované pozici ${s} u „${k}“${p ? ' (se slevou)' : ''}.`]));
 }
 zl.filter(x => x[0] === 'kq' && x[6] != null && x[11] >= 50 && x[11] <= 1000 && segOf({ keyword: x[2] }) === 'generic').sort((a, b) => a[6] - b[6] || b[11] - a[11]).slice(0, 2)
   .forEach(x => ins.push(['ins', D, 'gap', `Slabý generický dotaz: „${x[2]}“ (${x[11]} výsledků) – share of search ${pct(x[6])}.`]));
