@@ -121,7 +121,7 @@ for (const [k, rs] of Object.entries(krRows)) {
 }
 // am / ap – ad monitoring over every full run of the window: which brands buy sponsored #1 / #4, on which searches, with which product.
 //   am (per brand): avg number of generic searches with #1 and #4 per run, Prazdroj brand searches where it had a slot (count),
-//                   share of its slots with a discounted product, its most advertised product
+//                   average discount of the advertised products (%, no discount = 0), its most advertised product
 //   ap (per brand, gzip): every search × slot it held: product shown there most often, runs seen / runs measured, max discount
 const amB = {}, apK = {}, nKw = {};
 for (const d of WF) for (const r of kwOn(d)) {
@@ -131,7 +131,7 @@ for (const d of WF) for (const r of kwOn(d)) {
     const seg = segOf(r) === 'brand' ? 'b' : 'g', pid = r[`ad${s}_pid`], disc = discOfPromo(r[`ad${s}_promo`]);
     const x = amB[b] ??= { g1: 0, g4: 0, bq: new Set(), n: 0, disc: 0, prod: {} };
     if (seg === 'g') x[s === 1 ? 'g1' : 'g4']++; else if (!isOwn(b)) x.bq.add(r.keyword);
-    x.n++; if (disc) x.disc++;
+    x.n++; x.disc += disc && disc !== 'y' ? Number(disc) : 0;   // average discount: slots without a discount count as 0
     const pr = x.prod[pid] ??= { n: 0, name: r[`ad${s}_name`] || '' }; pr.n++;
     const k = `${b}|${r.keyword}|${s}`, y = apK[k] ??= { b, kw: r.keyword, seg, s, n: 0, dmax: 0, dn: 0, prod: {} };
     y.n++; if (disc) { y.dn++; y.dmax = Math.max(y.dmax, disc === 'y' ? 0 : Number(disc)); }
@@ -140,7 +140,7 @@ for (const d of WF) for (const r of kwOn(d)) {
 }
 const topProd = o => Object.values(o).sort((a, b) => b.n - a.n)[0] || { name: '' };
 const amTop = Object.entries(amB).sort((a, b) => b[1].n - a[1].n).filter(([b], i) => i < 30 || isOwn(b));
-amTop.forEach(([b, x]) => out.push(['am', D, b, isOwn(b) ? 1 : 0, r1(x.g1 / N), r1(x.g4 / N), x.bq.size, x.n ? Math.round(x.disc / x.n * 100) : null, topProd(x.prod).name.trim().slice(0, 60)]));
+amTop.forEach(([b, x]) => out.push(['am', D, b, isOwn(b) ? 1 : 0, r1(x.g1 / N), r1(x.g4 / N), x.bq.size, x.n ? Math.round(x.disc / x.n) : null, topProd(x.prod).name.trim().slice(0, 60)]));
 const amSet = new Set(amTop.map(([b]) => b)), apNames = {}, apBy = {};
 Object.values(apK).filter(y => amSet.has(y.b)).sort((a, b) => b.n - a.n).forEach(y => {
   const [pid, pr] = Object.entries(y.prod).sort((a, b) => b[1].n - a[1].n)[0]; apNames[pid] = pr.name.trim().slice(0, 60);
