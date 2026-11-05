@@ -119,25 +119,36 @@ for (const [k, rs] of Object.entries(krRows)) {
     return krIx[id] + ':' + brands.map(b => m[b] ?? '').join(',').replace(/,+$/, ''); });
   zl.push(['kr', D, k, brands.map(b => b.replace(/[|;:,]/g, ' ')).join('|'), ser.join(';')]);
 }
-// ad – sponsored slots by brand: average number of keywords per full run
-const ab = {};
-for (const d of WF) for (const r of kwOn(d)) for (const [s, b, p] of [[1, r.ad1_brand, r.ad1_promo], [4, r.ad4_brand, r.ad4_promo]]) if (b) {
-  ab[b] ??= [0, 0, 0]; ab[b][s === 1 ? 0 : 1]++; if (p) ab[b][2]++;
+// am / ap – ad monitoring over every full run of the window: which brands buy sponsored #1 / #4, on which searches, with which product.
+//   am (per brand): avg number of generic searches with #1 and #4 per run, Prazdroj brand searches where it had a slot (count),
+//                   share of its slots with a discounted product, its most advertised product
+//   ap (per brand, gzip): every search × slot it held: product shown there most often, runs seen / runs measured, max discount
+const amB = {}, apK = {}, nKw = {};
+for (const d of WF) for (const r of kwOn(d)) {
+  nKw[r.keyword] = (nKw[r.keyword] || 0) + 1;
+  for (const s of [1, 4]) {
+    const b = r[`ad${s}_brand`]; if (!b) continue;
+    const seg = segOf(r) === 'brand' ? 'b' : 'g', pid = r[`ad${s}_pid`], disc = discOfPromo(r[`ad${s}_promo`]);
+    const x = amB[b] ??= { g1: 0, g4: 0, bq: new Set(), n: 0, disc: 0, prod: {} };
+    if (seg === 'g') x[s === 1 ? 'g1' : 'g4']++; else if (!isOwn(b)) x.bq.add(r.keyword);
+    x.n++; if (disc) x.disc++;
+    const pr = x.prod[pid] ??= { n: 0, name: r[`ad${s}_name`] || '' }; pr.n++;
+    const k = `${b}|${r.keyword}|${s}`, y = apK[k] ??= { b, kw: r.keyword, seg, s, n: 0, dmax: 0, dn: 0, prod: {} };
+    y.n++; if (disc) { y.dn++; y.dmax = Math.max(y.dmax, disc === 'y' ? 0 : Number(disc)); }
+    (y.prod[pid] ??= { n: 0, name: r[`ad${s}_name`] || '' }).n++;
+  }
 }
-Object.entries(ab).sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1])).slice(0, 25)
-  .forEach(([b, [s1, s4, pr]]) => out.push(['ad', D, b, r1(s1 / N), r1(s4 / N), r1(pr / N), isOwn(b) ? 1 : 0]));
-// br – brand presence on non-brand searches: averages per full run
-const bp = {};
-let nbRows = 0;
-for (const d of WF) { const nb = kwOn(d).filter(r => num(r.total_hits) > 0 && segOf(r) !== 'brand'); nbRows += nb.length;
-  for (const r of nb) for (const x of (r.brands_top20 || '').split(' | ')) { const m = x.match(/^(.*):(\d+)$/); if (!m) continue; bp[m[1]] ??= [0, 0]; bp[m[1]][0]++; bp[m[1]][1] += Number(m[2]); } }
-Object.entries(bp).filter(([b]) => b !== 'bez značky').sort((a, b) => b[1][1] - a[1][1])
-  .filter(([b], i) => i < 25 || isOwn(b))
-  .forEach(([b, [kw, places]]) => out.push(['br', D, b, isOwn(b) ? 1 : 0, r1(kw / N), r3(places / Math.max(1, nbRows)), r1((ab[b]?.[0] || 0) / N), r1((ab[b]?.[1] || 0) / N)]));
-// cq – competitor ads on Prazdroj brand searches, every full run: how many runs each (keyword, slot, brand) was seen
-const cqc = {};
-for (const d of WF) for (const [k, s, b, p] of conquestOf(kwOn(d))) { const key = [k, s, b].join('|'); (cqc[key] ??= { k, s, b, n: 0, p: '' }).n++; if (p) cqc[key].p = p; }
-Object.values(cqc).sort((a, b) => b.n - a.n).slice(0, 60).forEach(x => out.push(['cq', D, x.k, x.s, x.b, x.p, `${x.n}/${N}`]));
+const topProd = o => Object.values(o).sort((a, b) => b.n - a.n)[0] || { name: '' };
+const amTop = Object.entries(amB).sort((a, b) => b[1].n - a[1].n).filter(([b], i) => i < 30 || isOwn(b));
+amTop.forEach(([b, x]) => out.push(['am', D, b, isOwn(b) ? 1 : 0, r1(x.g1 / N), r1(x.g4 / N), x.bq.size, x.n ? Math.round(x.disc / x.n * 100) : null, topProd(x.prod).name.trim().slice(0, 60)]));
+const amSet = new Set(amTop.map(([b]) => b)), apNames = {}, apBy = {};
+Object.values(apK).filter(y => amSet.has(y.b)).sort((a, b) => b.n - a.n).forEach(y => {
+  const [pid, pr] = Object.entries(y.prod).sort((a, b) => b[1].n - a[1].n)[0]; apNames[pid] = pr.name.trim().slice(0, 60);
+  (apBy[y.b] ??= []).push([y.kw.replace(/[~;]/g, ' '), y.seg, y.s, pid, `${y.n}/${nKw[y.kw]}`, y.dn ? (y.dmax || 'y') : ''].join('~'));
+});
+// compact: one ap row per brand ("search~g|b~slot~pid~seen/measured~maxDiscount;…"), product names once in apn
+Object.entries(apBy).forEach(([b, l]) => zl.push(['ap', D, b, l.join(';')]));
+Object.entries(apNames).forEach(([pid, n]) => zl.push(['apn', D, pid, n]));
 // sk – SKUs, simple view: keywords in the backend vs new suggested keywords, and on how many of each the SKU is in the
 //      organic top 20 (average over all full runs, whole numbers); typical organic position on its assigned keywords
 const nCur = {}, nNew = {};
