@@ -309,6 +309,52 @@ if (slots && ownDisc.length >= 5 && ownFull.length >= 5) ins.push(['ins', D, 'in
   `Slevy: ${Math.round(slotsDisc / slots * 100)} % produktů v top 5 je ve slevě. Medián organické pozice SKU Prazdroje: ve slevě ${mD}, bez slevy ${mF}.`]);
 out.push(...ins.slice(0, 12));
 
+// ── v8 (10 Nov 2026) Proč se pozice změnila – rule-based attribution of a SKU's move on an assigned keyword between the
+//    two latest full runs. Order = most certain first; the first rule that fits explains the move. No control group:
+//    "algoritmus" = no measurable cause (most likely popularity/sales signals – Rohlík search looks like Google Retail Search).
+//    wy [d, kw, pid, from, to, code, detail] (top 60 by size) · wys [d, moves, code:count|…, prev run, last run]
+{
+  const LF = WF.at(-1), PF = WF.length > 1 ? WF.at(-2) : null;
+  if (LF && PF) {
+    const pk = r => r.keyword + '|' + r.pid;
+    const posA = Object.fromEntries(posOn(PF).filter(r => r.kw_status !== 'not linked').map(r => [pk(r), r]));
+    const posB = posOn(LF).filter(r => r.kw_status !== 'not linked');
+    const kwA = Object.fromEntries(kwOn(PF).map(r => [r.keyword, r])), kwB = Object.fromEntries(kwOn(LF).map(r => [r.keyword, r]));
+    const between = d => d > PF.slice(0, 10) && d <= LF.slice(0, 10);
+    const live = new Set((cfg.golive || []).filter(g => between(g.date)).flatMap(g => (g.pids || []).map(String)));
+    const content = new Set((cfg.contentGolive || []).filter(g => between(g.date)).flatMap(g => (g.pids || []).map(String)));
+    const slotN = x => Number(String(x || '0').split('/')[0]) > 0;
+    const moves = [];
+    for (const b of posB) {
+      const a = posA[pk(b)]; if (!a) continue;
+      const o1 = num(a.org_pos), o2 = num(b.org_pos);
+      const dropped = o1 != null && o2 == null, appeared = o1 == null && o2 != null;
+      if (!dropped && !appeared && (o1 == null || o2 == null || Math.abs(o2 - o1) < 3)) continue;
+      const d = dropped ? 99 : appeared ? -99 : o2 - o1;            // + = worse
+      const ka = kwA[b.keyword] || {}, kb = kwB[b.keyword] || {};
+      const c1 = num(a.org_pos_clean), c2 = num(b.org_pos_clean);
+      const hasClean = c1 != null && c2 != null && a.in_stock !== '' && b.in_stock !== '';
+      const dh = num(kb.total_hits) - num(ka.total_hits), doos = (num(kb.oos_total) ?? 0) - (num(ka.oos_total) ?? 0);
+      const disc1 = discOfPromo(a.promo), disc2 = discOfPromo(b.promo);
+      let code, detail = '';
+      if (b.in_stock === '0' && a.in_stock !== '0') { code = 'sklad_nase'; detail = 'SKU je vyprodané (vyprodané jdou na konec)'; }
+      else if (a.in_stock === '0' && b.in_stock === '1') { code = 'sklad_nase'; detail = 'SKU je zpět skladem'; }
+      else if (slotN(a.novinka_slot) !== slotN(b.novinka_slot)) { code = 'novinka'; detail = slotN(b.novinka_slot) ? 'SKU je ve slotu novinky (pozice 6)' : 'SKU vypadlo ze slotu novinky'; }
+      else if (live.has(b.pid)) { code = 'klicova_slova'; detail = 'mezi měřeními nasazena klíčová slova'; }
+      else if (content.has(b.pid)) { code = 'content'; detail = 'mezi měřeními upraven obsah produktu'; }
+      else if (hasClean && Math.abs(c2 - c1) < 3) { code = 'reklama_slot'; detail = `čistá pozice skoro beze změny (${c1}→${c2}); posun dělají reklamy, slot novinky nebo vyprodané nad SKU`; }
+      else if (!!disc1 !== !!disc2) { code = 'sleva'; detail = disc2 ? `SKU nově ve slevě (−${disc2 === 'y' ? '?' : disc2} %)` : 'SKU už není ve slevě'; }
+      else if (d < 0 && doos > 0 && -d <= doos + 2) { code = 'sklad_konkurence'; detail = `o ${doos} víc vyprodaných produktů na dotazu – pravděpodobně vypadla konkurence nad SKU`; }
+      else if (dh && Math.abs(dh) >= Math.min(Math.abs(d), 50) && Math.sign(dh) === Math.sign(d)) { code = 'nabidka'; detail = `změna nabídky: ${dh > 0 ? '+' : ''}${dh} výsledků na dotazu`; }
+      else { code = 'algoritmus'; detail = 'bez měřitelné příčiny – pravděpodobně popularita/prodeje (signály Rohlíku, které nevidíme)'; }
+      moves.push([b.keyword, b.pid, o1, o2, code, detail, Math.abs(d)]);
+    }
+    const cnt = {}; moves.forEach(m => cnt[m[4]] = (cnt[m[4]] || 0) + 1);
+    out.push(['wys', D, moves.length, Object.entries(cnt).map(([k, v]) => k + ':' + v).join('|'), PF, LF]);
+    moves.sort((x, y) => y[6] - x[6]).slice(0, 60).forEach(m => out.push(['wy', D, m[0], m[1], m[2], m[3], m[4], m[5]]));
+  }
+}
+
 // ── v7 (10 Nov 2026) Novinka & sklad – separate section, data only from tracker v2 runs (columns depth/in_stock/…).
 //    Rohlík inserts one "Novinka" at position 6; out-of-stock products are always sorted last.
 //    nvm [d, v2 runs, first v2 run] · nv per keyword with a slot [d, kw, brand, pid, k, n, own]
