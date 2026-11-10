@@ -210,7 +210,7 @@ async function main() {
   const EMAIL_COLS = ['date', 'time', 'mode', 'passes', 'keyword', 'groups', 'key', 'total_hits', 'n_ads',
     'ad1_pid', 'ad1_brand', 'ad1_promo', 'ad4_pid', 'ad4_brand', 'ad4_promo', 'ad1_hold', 'ad4_hold',
     'prazdroj_sos_top20', 'prazdroj_sos_org_top20', 'prazdroj_best_org_pos', 'prazdroj_positions',
-    'linked_skus', 'linked_found', 'brands_top5'];
+    'linked_skus', 'linked_found', 'brands_top5', 'oos_top20', 'novinka_slot_brand']; // v2 cols appended 10 Nov 2026
   const PART_LIMIT = Number(process.env.PART_LIMIT || 10000);
   const slim = r => ({ ...r, brands_top5: (r.brands_top20 || '').split(' | ').slice(0, 5).join(' | ') });
   const emailCsv = kwRows.length ? EMAIL_COLS.join(',') + '\n' + kwRows.map(r => EMAIL_COLS.map(c => csvCell(slim(r)[c])).join(',')).join('\n') + '\n' : '';
