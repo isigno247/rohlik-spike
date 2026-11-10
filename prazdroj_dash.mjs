@@ -309,6 +309,46 @@ if (slots && ownDisc.length >= 5 && ownFull.length >= 5) ins.push(['ins', D, 'in
   `Slevy: ${Math.round(slotsDisc / slots * 100)} % produktů v top 5 je ve slevě. Medián organické pozice SKU Prazdroje: ve slevě ${mD}, bez slevy ${mF}.`]);
 out.push(...ins.slice(0, 12));
 
+// ── v7 (10 Nov 2026) Novinka & sklad – separate section, data only from tracker v2 runs (columns depth/in_stock/…).
+//    Rohlík inserts one "Novinka" at position 6; out-of-stock products are always sorted last.
+//    nvm [d, v2 runs, first v2 run] · nv per keyword with a slot [d, kw, brand, pid, k, n, own]
+//    os per tracked SKU out of stock at least once [d, pid, latest in stock 1/0, runs OOS, runs measured]
+//    oq per keyword with OOS in top 20 [d, kw, avg oos_top20, latest oos_top20, latest oos_total]
+//    cl per SKU where clean ≠ reported position (latest v2 run) [d, pid, median org_pos, median org_pos_clean, kw differing, kw measured]
+{
+  const V2 = WA.filter(id => kwEvery.some(r => runId(r) === id && r.depth !== '' && r.depth != null));
+  if (V2.length) {
+    const L2 = V2.filter(id => WF.includes(id)).at(-1) || V2.at(-1);   // prefer the latest FULL run
+    out.push(['nvm', D, V2.length, V2[0]]);
+    const nvBy = {};
+    for (const r of kwEvery) if (V2.includes(runId(r))) {
+      const x = nvBy[r.keyword] ??= { n: 0, s: [] }; x.n++;
+      if (r.novinka_slot_pid) x.s.push(r.novinka_slot_brand + '\t' + r.novinka_slot_pid);
+    }
+    Object.entries(nvBy).filter(([, x]) => x.s.length).sort((a, b) => b[1].s.length - a[1].s.length).slice(0, 60)
+      .forEach(([k, x]) => { const [top, c] = mode(x.s); const [b, pid] = top.split('\t');
+        out.push(['nv', D, k, b, pid, c, x.n, isOwn(b) ? 1 : 0]); });
+    const posV2 = posEvery.filter(r => V2.includes(runId(r)) && r.in_stock !== '' && r.in_stock != null);
+    const st = {};
+    for (const r of posV2) { const x = st[r.pid] ??= { runs: new Set(), oos: new Set(), last: null, lastId: '' };
+      const id = runId(r); x.runs.add(id); if (r.in_stock === '0') x.oos.add(id);
+      if (id >= x.lastId) { x.lastId = id; x.last = r.in_stock === '0' ? 0 : 1; } }
+    Object.entries(st).filter(([, x]) => x.oos.size).forEach(([pid, x]) => out.push(['os', D, pid, x.last, x.oos.size, x.runs.size]));
+    const oqBy = {};
+    for (const r of kwEvery) if (V2.includes(runId(r))) (oqBy[r.keyword] ??= []).push(r);
+    Object.entries(oqBy).forEach(([k, rs]) => { const v = rs.map(r => num(r.oos_top20)); if (!v.some(x => x > 0)) return;
+      const l = rs.at(-1); out.push(['oq', D, k, r1(avg(v)), num(l.oos_top20), num(l.oos_total)]); });
+    const cl = {};
+    for (const r of posV2.filter(r => runId(r) === L2 && r.kw_status !== 'not linked')) {
+      const x = cl[r.pid] ??= { o: [], c: [], d: 0, n: 0 }; x.n++;
+      const o = num(r.org_pos), c = num(r.org_pos_clean);
+      if (o != null) x.o.push(o); if (c != null) x.c.push(c); if (o !== c) x.d++;
+    }
+    Object.entries(cl).filter(([, x]) => x.d).sort((a, b) => b[1].d - a[1].d).slice(0, 80)
+      .forEach(([pid, x]) => out.push(['cl', D, pid, median(x.o), median(x.c), x.d, x.n]));
+  }
+}
+
 // write parts: ≤ 9,000 chars each; small tables as JSON lines, large ones gzip+base64 in "~NNNN" lines
 const lines = out.map(x => JSON.stringify(x));
 if (zl.length) {
