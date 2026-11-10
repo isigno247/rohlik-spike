@@ -16,14 +16,31 @@ const PASSES = Number(process.env.PASSES || (cfg.baselineUntil && pragueDate <= 
 const SPACING_MS = Number(process.env.SPACING_MS || 1500);
 const BASE = 'https://www.rohlik.cz/services/frontend-service/search-metadata';
 const own = new Set(cfg.ownBrands.map(b => b.toLowerCase()));
+const NOVINKA_SLOT = Number(cfg.novinkaSlot || 6);
+const KEY_DEPTH = Number(cfg.limitKey || 200);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // go-live log: [{date:'YYYY-MM-DD', pids:[...], keywords:[...]}] -> key "pid|keyword" -> date
 const live = new Map();
 for (const g of cfg.golive || []) for (const p of g.pids) for (const k of g.keywords) live.set(`${p}|${k.toLowerCase()}`, g.date);
 
-async function search(q) {
-  const url = `${BASE}?search=${encodeURIComponent(q)}&offset=0&limit=${cfg.limit}&companyId=1&warehouseId=${cfg.warehouseId}`;
+// v2 (10 Nov 2026 test): key keywords go deeper (broad queries like "pivo" have 400+ hits); out-of-stock items
+// are always sorted to the very end by the API, so a tracked SKU that goes OOS drops to the tail.
+async function search(q, depth = cfg.limit) {
+  const pages = [];
+  for (let off = 0; off < depth; off += 200) {
+    const d = await searchPage(q, off, Math.min(200, depth - off));
+    if (!d) return pages.length ? merge(pages) : null;
+    pages.push(d);
+    if (off + 200 >= (d.totalHits ?? 0) || !(d.productIds || []).length) break;
+    await sleep(300);
+  }
+  return merge(pages);
+}
+const merge = ps => ps.length === 1 ? ps[0] : { ...ps[0], productIds: ps.flatMap(d => d.productIds || []),
+  productList: ps.flatMap(d => d.productList || []), impressions: ps[0].impressions };
+async function searchPage(q, offset, limit) {
+  const url = `${BASE}?search=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}&companyId=1&warehouseId=${cfg.warehouseId}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const r = await fetch(url, { headers: { 'accept': 'application/json', 'user-agent': 'Mozilla/5.0 (POS Media keyword tracker)' } });
@@ -50,14 +67,25 @@ const brandOf = p => (typeof p.brand === 'string' ? p.brand : p.brand?.name) || 
 
 function snapshot(d) {
   const ids = d.productIds || [];
+  // ads Set by productId is safe for ANONYMOUS calls: 0 duplicate productIds in 22 queries (sponsored slots 1 and 4).
+  // Logged-in API + website DO duplicate (novinka at #6 and again at its organic rank, e.g. #236; ad #1 again organically).
+  // Anonymous API collapses these to the inserted slot only -> the true organic rank of a slotted novinka or an ad product
+  // is NOT observable anonymously; org_pos_clean is left empty for them on purpose.
   const ads = new Set((d.impressions || []).map(i => i.productId));
   const byId = new Map((d.productList || []).map(p => [p.productId, p]));
-  let org = 0;
+  let org = 0, clean = 0;
   const rows = ids.map((id, i) => {
     const p = byId.get(id) || {};
     const ad = ads.has(id);
+    const isNew = (p.badge || []).some(b => b.slug === 'new');
+    const inStock = p.inStock !== false;
+    // Rohlík injects one "Novinka" product at position 6 (13 of 14 queries with a novinka, 10 Nov 2026)
+    const slot = i + 1 === NOVINKA_SLOT && isNew && !ad;
     if (!ad) org++;
-    return { id, pos: i + 1, org: ad ? null : org, ad, brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p), disc: discOf(p) };
+    const isClean = !ad && !slot && inStock;
+    if (isClean) clean++;
+    return { id, pos: i + 1, org: ad ? null : org, orgClean: isClean ? clean : null, ad, isNew, inStock, slot,
+      brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p), disc: discOf(p) };
   });
   return { total: d.totalHits ?? ids.length, rows };
 }
@@ -79,7 +107,7 @@ async function main() {
   for (const [k, groups, cur, plan, key] of list) {
     const snaps = [];
     for (let pass = 0; pass < PASSES; pass++) {
-      const d = await search(k); n++;
+      const d = await search(k, key ? KEY_DEPTH : cfg.limit); n++;
       if (d) snaps.push(snapshot(d));
       await sleep(SPACING_MS);
     }
@@ -123,7 +151,11 @@ async function main() {
       if (orgMed == null && !r0) continue;          // linked but not found -> counted in keyword row, no position row
       posRows.push({ date: pragueDate, time: pragueTime, mode: MODE, keyword: k, pid: pidStr, brand: cfg.skus[pidStr]?.[0] || r0?.brand || '',
         org_pos: orgMed, pos_incl_ads: median(alls), sponsored: r0?.ad ? 1 : 0, promo: r0?.promo || '', kw_status: status, period,
-        found_in_passes: orgs.filter(x => x != null).length + '/' + snaps.length });
+        found_in_passes: orgs.filter(x => x != null).length + '/' + snaps.length,
+        // v2 columns (appended): stock + novinka effects separated from keyword effect
+        in_stock: r0 ? (r0.inStock ? 1 : 0) : '', novinka: r0?.isNew ? 1 : 0,
+        novinka_slot: snaps.filter(s => s.rows.some(r => r.id === pid && r.slot)).length + '/' + snaps.length,
+        org_pos_clean: median(snaps.map(s => s.rows.find(r => r.id === pid)?.orgClean ?? null)) });
     }
     kwRows.push({ date: pragueDate, time: pragueTime, mode: MODE, passes: snaps.length, keyword: k, groups, key: key ? 1 : 0, total_hits: s0.total,
       n_ads: s0.rows.filter(r => r.ad).length,
@@ -147,7 +179,11 @@ async function main() {
           Object.entries(b).forEach(([k, v]) => (per[k] ??= []).push(v)); });
         return Object.entries(per).map(([k, v]) => [k, median(v)]).sort((a, b) => a[1] - b[1]).slice(0, 15)
           .map(([k, v]) => `${k.replace(/[|:]/g, ' ')}:${v}`).join('|');
-      })() });
+      })(),
+      // v2 columns (appended)
+      depth: s0.rows.length,
+      oos_top20: s0.rows.slice(0, cfg.topN).filter(r => !r.inStock).length, oos_total: s0.rows.filter(r => !r.inStock).length,
+      novinka_slot_pid: s0.rows.find(r => r.slot)?.id ?? '', novinka_slot_brand: s0.rows.find(r => r.slot)?.brand ?? '' });
     for (const r of s0.rows.slice(0, 5)) products[r.id] = [r.brand, r.name];
   }
 
