@@ -43,6 +43,8 @@ const median = a => { const b = a.filter(x => x != null).sort((x, y) => x - y); 
 const brandRx = /birell|kozel|pilsner|urquell|radegast|gambrinus|frisco|elektr|proud|primus|excelent|klasik|peroni/i;
 const segOf = r => brandRx.test(r.keyword) ? 'brand' : r.key === '1' ? 'key' : 'generic';
 const org = r => num(r.prazdroj_sos_org_top20);
+const has = x => x !== undefined && x !== null && x !== '';
+const p1 = r => (has(r.sos12_org) && has(r.sos12_ad) ? num(r.sos12_org) + num(r.sos12_ad) : null);   // share of search, page 1 total
 const conquestOf = rows => rows.filter(r => segOf(r) === 'brand').flatMap(r =>
   [['1', r.ad1_brand, r.ad1_promo], ['4', r.ad4_brand, r.ad4_promo]].filter(([, b]) => b && !isOwn(b)).map(([s, b, p]) => [r.keyword, s, b, p]));
 
@@ -84,6 +86,12 @@ for (const d of runs) {
     a1.filter(r => isOwn(r.ad1_brand)).length, a1.length, a4.filter(r => isOwn(r.ad4_brand)).length, a4.length,
     a1.filter(r => r.ad1_promo).length + a4.filter(r => r.ad4_promo).length, conquestOf(rows).length,
     controls.size ? grp(true) : null, controls.size ? grp(false) : null]);
+  // ss – share of search page 1 (12 tiles) and top 24, incl. sponsored, split organic / sponsored, per segment
+  //      [d, time, segment, org12, ad12, org24, ad24, queries]; only runs measured since the metric exists
+  if (rows.some(r => has(r.sos12_org))) for (const k of ['key', 'generic', 'brand']) {
+    const g = rows.filter(r => segOf(r) === k && has(r.sos12_org)), m = c => r3(avg(g.map(r => num(r[c]))));
+    zl.push(['ss', d.slice(0, 10), d.slice(11), k, m('sos12_org'), m('sos12_ad'), m('sos24_org'), m('sos24_ad'), g.length]);
+  }
 }
 const latest = kwOn(D).filter(r => num(r.total_hits) > 0);
 const latestBy = Object.fromEntries(latest.map(r => [r.keyword, r]));
@@ -161,7 +169,8 @@ const skTop = id => {               // pid -> [backend kw in top 20, new kw in t
     const x = s[r.pid] ??= [0, 0, []], o = num(r.org_pos);
     if (o == null) continue;
     x[2].push(o);
-    if (o <= 20) x[r.kw_status === 'current' ? 0 : 1]++;
+    const t = num(r.pos_incl_ads);   // top 24 = first two search pages, sponsored tiles included
+    if (t !== null && t <= 24) x[r.kw_status === 'current' ? 0 : 1]++;
   }
   return s;
 };
@@ -243,6 +252,10 @@ for (const r of latest) {
   zl.push(['kq', D, r.keyword, c.key ? 1 : 0, c.c.join(' '), plan.join(' '), r3(avg(all.map(org))), median(all.map(x => num(x.prazdroj_best_org_pos))),
     pos, topStr, r1(avg(withTop.map(x => num(x.promo_top20)))), num(r.total_hits), all.length, nt, r.groups || '',
     ...slotOf(adAll, 1), ...slotOf(adAll, 4)]);
+  // kqs – per query: share of search page 1 / top 24 (organic, sponsored) and discounted products in the top 24,
+  //       averaged over runs that measured them [d, kw, org12, ad12, org24, ad24, promo24]
+  const nw = all.filter(x => has(x.sos12_org)), ms = c => r3(avg(nw.map(x => num(x[c]))));
+  if (nw.length) zl.push(['kqs', D, r.keyword, ms('sos12_org'), ms('sos12_ad'), ms('sos24_org'), ms('sos24_ad'), r1(avg(nw.map(x => num(x.promo_top24))))]);
 }
 const PROD = `history/${cfg.client}_products.json`;
 const prod = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
@@ -276,11 +289,12 @@ const prior = WF.filter(id => id < D), NP = prior.length;
 if (NP) {
   const kRows = latest;
   const moves = kRows.map(r => {
-    const before = (byKw[r.keyword] || []).filter(x => runId(x) < D && num(x.total_hits) > 0).map(org);
-    const b = avg(before); return [r.keyword, b == null || org(r) == null ? null : org(r) - b, before.length, num(r.total_hits)];
-  }).filter(([, d, n, h]) => d != null && n >= 2 && Math.abs(d) >= 0.1 && h <= 1000).sort((a, b) => b[3] - a[3]);   // > 1000 results = broad non-beer query
+    // share of search on page 1 (12 tiles incl. sponsored); one tile = 8.3 points, so >= 17 points = at least 2 tiles
+    const before = (byKw[r.keyword] || []).filter(x => runId(x) < D && num(x.total_hits) > 0).map(p1).filter(x => x !== null);
+    const b = avg(before); return [r.keyword, b == null || p1(r) == null ? null : p1(r) - b, before.length, num(r.total_hits)];
+  }).filter(([, d, n, h]) => d != null && n >= 2 && Math.abs(d) >= 0.17 && h <= 1000).sort((a, b) => b[3] - a[3]);   // > 1000 results = broad non-beer query
   moves.slice(0, 3).forEach(([k, d, n]) => ins.push(['ins', D, d > 0 ? 'up' : 'down',
-    `„${k}“: share of search ${pct(org(latestBy[k]))}, o ${Math.round(Math.abs(d) * 100)} b. ${d > 0 ? 'nad' : 'pod'} průměrem.`]));
+    `„${k}“: share of search ${pct(p1(latestBy[k]))}, o ${Math.round(Math.abs(d) * 100)} b. ${d > 0 ? 'nad' : 'pod'} průměrem.`]));
   const adCh = [];
   for (const r of kRows) for (const s of ['1', '4']) {
     const b = r[`ad${s}_brand`], hold = r[`ad${s}_hold`];
@@ -382,8 +396,10 @@ out.push(...ins.slice(0, 12));
     Object.entries(st).filter(([, x]) => x.oos.size).forEach(([pid, x]) => out.push(['os', D, pid, x.last, x.oos.size, x.runs.size]));
     const oqBy = {};
     for (const r of kwEvery) if (V2.includes(runId(r))) (oqBy[r.keyword] ??= []).push(r);
-    Object.entries(oqBy).forEach(([k, rs]) => { const v = rs.map(r => num(r.oos_top20)); if (!v.some(x => x > 0)) return;
-      const l = rs.at(-1); out.push(['oq', D, k, r1(avg(v)), num(l.oos_top20), num(l.oos_total)]); });
+    Object.entries(oqBy).forEach(([k, all]) => {   // top 24 once measured, top 20 before
+  const c = all.some(r => has(r.oos_top24)) ? 'oos_top24' : 'oos_top20', rs = c === 'oos_top24' ? all.filter(r => has(r.oos_top24)) : all;
+  const v = rs.map(r => num(r[c])); if (!v.some(x => x > 0)) return;
+      const l = rs.at(-1); out.push(['oq', D, k, r1(avg(v)), num(l[c]), num(l.oos_total)]); });
     const cl = {};
     for (const r of posV2.filter(r => runId(r) === L2 && r.kw_status !== 'not linked')) {
       const x = cl[r.pid] ??= { o: [], c: [], d: 0, n: 0 }; x.n++;
