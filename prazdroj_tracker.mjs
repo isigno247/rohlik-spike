@@ -18,6 +18,7 @@ const BASE = 'https://www.rohlik.cz/services/frontend-service/search-metadata';
 const own = new Set(cfg.ownBrands.map(b => b.toLowerCase()));
 const NOVINKA_SLOT = Number(cfg.novinkaSlot || 6);
 const KEY_DEPTH = Number(cfg.limitKey || 200);
+const P1 = Number(cfg.pageSize || 12), P2 = 2 * P1;   // tiles on the first search page / first two pages (incl. sponsored)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // go-live log: [{date:'YYYY-MM-DD', pids:[...], keywords:[...]}] -> key "pid|keyword" -> date
@@ -121,6 +122,14 @@ async function main() {
     });
     const mean = a => { const b = a.filter(x => x != null); return b.length ? b.reduce((x, y) => x + y, 0) / b.length : null; };
     const sosAll = mean(shares.map(x => x[0])), sosOrg = mean(shares.map(x => x[1]));
+    // share of search on page 1 (P1 tiles, 12) and pages 1–2 (P2 tiles, 24): tiles incl. sponsored, fixed denominator,
+    // split into organic and sponsored Prazdroj tiles, averaged over passes like the top-20 share above
+    const sosDepth = n => {
+      const per = snaps.map(s => { const t = s.rows.slice(0, n).filter(isOwn); return [t.filter(r => !r.ad).length / n, t.filter(r => r.ad).length / n]; });
+      return [mean(per.map(x => x[0])), mean(per.map(x => x[1]))];
+    };
+    const [sos12Org, sos12Ad] = sosDepth(P1), [sos24Org, sos24Ad] = sosDepth(P2);
+    const f3 = x => x === null ? '' : x.toFixed(3);
     const brandCount = {};
     s0.rows.slice(0, cfg.topN).forEach(r => brandCount[r.brand] = (brandCount[r.brand] || 0) + 1);
     // sponsored slot = the product seen there most often across passes, with how often (e.g. 2/3)
@@ -183,7 +192,10 @@ async function main() {
       // v2 columns (appended)
       depth: s0.rows.length,
       oos_top20: s0.rows.slice(0, cfg.topN).filter(r => !r.inStock).length, oos_total: s0.rows.filter(r => !r.inStock).length,
-      novinka_slot_pid: s0.rows.find(r => r.slot)?.id ?? '', novinka_slot_brand: s0.rows.find(r => r.slot)?.brand ?? '' });
+      novinka_slot_pid: s0.rows.find(r => r.slot)?.id ?? '', novinka_slot_brand: s0.rows.find(r => r.slot)?.brand ?? '',
+      // v3 columns (appended): share of search page 1 (12 tiles) and top 24, incl. sponsored tiles; promo/OOS in top 24
+      sos12_org: f3(sos12Org), sos12_ad: f3(sos12Ad), sos24_org: f3(sos24Org), sos24_ad: f3(sos24Ad),
+      promo_top24: s0.rows.slice(0, P2).filter(r => r.disc).length, oos_top24: s0.rows.slice(0, P2).filter(r => !r.inStock).length });
     for (const r of s0.rows.slice(0, 5)) products[r.id] = [r.brand, r.name];
   }
 
