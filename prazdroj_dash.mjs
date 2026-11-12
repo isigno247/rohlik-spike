@@ -395,14 +395,14 @@ out.push(...ins.slice(0, 12));
   }
 }
 
-// write parts: ≤ 9,000 chars each; small tables as JSON lines, large ones gzip+base64 in "~NNNN" lines
+// write parts: ≤ 18,000 chars each (fewer e-mails; 12k was proven fine, 55k hit quarantine); small tables as JSON lines, large ones gzip+base64 in "~NNNN" lines
 const lines = out.map(x => JSON.stringify(x));
 if (zl.length) {
   const b64 = zlib.gzipSync(zl.map(x => JSON.stringify(x)).join('\n'), { level: 9 }).toString('base64');
   for (let i = 0, n = 0; i < b64.length; i += 120, n++) lines.push(`~${String(n).padStart(4, '0')} ${b64.slice(i, i + 120)}`);
 }
 const parts = []; let cur = [];
-for (const l of lines) { if (cur.join('\n').length + l.length > 9000) { parts.push(cur); cur = []; } cur.push(l); }
+for (const l of lines) { if (cur.join('\n').length + l.length > 18000) { parts.push(cur); cur = []; } cur.push(l); }
 if (cur.length) parts.push(cur);
 fs.mkdirSync('out', { recursive: true });
 parts.forEach((p, i) => fs.writeFileSync(`out/part_${900 + i}_dash.csv`,
