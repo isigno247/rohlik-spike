@@ -73,11 +73,15 @@ const byKw = {};                                    // keyword -> rows over all 
 for (const r of kwEvery) if (WA.includes(runId(r))) (byKw[r.keyword] ??= []).push(r);
 const fullOf = rows => rows.filter(r => r.mode === 'full');
 
+// fixed query set for trends and SKU notes: queries measured since the first full run (queries added later, e.g. +110 on 12 Nov, would shift averages)
+const BASE = new Set(kwOn(runs[0]).map(r => r.keyword));
+// visibility = own products among the first 20 tiles INCLUDING own sponsored ones (Rohlík does not repeat an advertised product organically)
+const vis = r => num(r.prazdroj_sos_top20);
 const out = [], zl = [];                            // zl = rows sent gzip+base64 (large tables)
 // tr – one row per full run, all runs (trend; tiles average them in the page)
 for (const d of runs) {
-  const rows = kwOn(d).filter(r => num(r.total_hits) > 0);
-  const seg = k => r3(avg(rows.filter(r => segOf(r) === k).map(org)));
+  const rows = kwOn(d).filter(r => num(r.total_hits) > 0 && BASE.has(r.keyword));
+  const seg = k => r3(avg(rows.filter(r => segOf(r) === k).map(vis))), segO = k => r3(avg(rows.filter(r => segOf(r) === k).map(org)));
   const a1 = rows.filter(r => r.ad1_brand), a4 = rows.filter(r => r.ad4_brand);
   const st = controls.size ? skuStats(d) : {};
   const grp = inCtl => r3(avg(Object.entries(st).filter(([pid]) => controls.has(pid) === inCtl).map(([, x]) => median(x.pos))));
@@ -85,7 +89,7 @@ for (const d of runs) {
     rows.filter(r => segOf(r) === 'generic' && org(r) === 0).length,
     a1.filter(r => isOwn(r.ad1_brand)).length, a1.length, a4.filter(r => isOwn(r.ad4_brand)).length, a4.length,
     a1.filter(r => r.ad1_promo).length + a4.filter(r => r.ad4_promo).length, conquestOf(rows).length,
-    controls.size ? grp(true) : null, controls.size ? grp(false) : null]);
+    controls.size ? grp(true) : null, controls.size ? grp(false) : null, segO('generic'), segO('brand')]);
   // ss – share of search page 1 (12 tiles) and top 24, incl. sponsored, split organic / sponsored, per segment
   //      [d, time, segment, org12, ad12, org24, ad24, queries]; only runs measured since the metric exists
   if (rows.some(r => has(r.sos12_org))) for (const k of ['key', 'generic', 'brand']) {
@@ -305,11 +309,13 @@ if (NP) {
       `„${r.keyword}“: ${b} má nově sponzorovanou pozici ${s}${r[`ad${s}_promo`] ? ' (se slevou)' : ''}; předtím jen ${had}× z ${before.length} měření.`]]);
   }
   adCh.sort((a, b) => b[0] - a[0]).slice(0, 3).forEach(([, x]) => ins.push(x));
-  const avgSeen = pid => avg(prior.map(id => skuStats(id)[pid]?.seen || 0));
+  const seenOn = id => { const s = {}; for (const r of posOn(id)) if (BASE.has(r.keyword)) s[r.pid] = (s[r.pid] || 0) + 1; return s; };
+const seenPrior = prior.map(seenOn), seenD = seenOn(D);
+const avgSeen = pid => avg(seenPrior.map(s => s[pid] || 0));
   const seenAvg = Object.fromEntries(cfg.skuList.map(([p]) => [String(p), avgSeen(String(p))]));
-  cfg.skuList.map(([pid, br]) => [String(pid), br]).map(([pid, br]) => [pid, br, (sD[pid]?.seen || 0) - seenAvg[pid]])
-    .filter(x => x[2] <= -3).sort((a, b) => a[2] - b[2]).slice(0, 2)
-    .forEach(([pid, br, d]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${sD[pid]?.seen || 0} dotazech, o ${Math.round(-d)} méně než průměr.`]));
+  cfg.skuList.map(([pid, br]) => [String(pid), br]).map(([pid, br]) => [pid, br, (seenD[pid] || 0) - seenAvg[pid]])
+    .filter(x => x[2] <= -Math.max(5, 0.15 * seenAvg[x[0]])).sort((a, b) => a[2] - b[2]).slice(0, 2)
+    .forEach(([pid, br, d]) => ins.push(['ins', D, 'down', `${br} SKU ${pid} se zobrazuje na ${seenD[pid] || 0} dotazech, o ${Math.round(-d)} méně než průměr.`]));
   const seenCq = new Set(prior.flatMap(id => conquestOf(kwOn(id)).map(x => x.slice(0, 3).join('|'))));
   conquestOf(latest).filter(x => !seenCq.has(x.slice(0, 3).join('|'))).slice(0, 2).forEach(([k, s, b, p]) =>
     ins.push(['ins', D, 'watch', `Nová reklama konkurence na brandovém dotazu: ${b} na sponzorované pozici ${s} u „${k}“${p ? ' (se slevou)' : ''}.`]));
@@ -318,8 +324,8 @@ zl.filter(x => x[0] === 'kq' && x[6] != null && x[11] >= 50 && x[11] <= 1000 && 
   .forEach(x => ins.push(['ins', D, 'gap', `Slabý generický dotaz: „${x[2]}“ (${x[11]} výsledků) – share of search ${pct(x[6])}.`]));
 const trW = zl.filter(x => x[0] === 'tr' && WF.includes(`${x[1]} ${x[2]}`));
 if (trW.length) { const s = i => trW.reduce((a, x) => a + (x[i] || 0), 0);
-  ins.push(['ins', D, 'info', `Sponzorované pozice: Prazdroj má pozici 1 průměrně na ${Math.round(s(8) / trW.length)} z ${Math.round(s(9) / trW.length)} dotazů a pozici 4 na ${Math.round(s(10) / trW.length)} z ${Math.round(s(11) / trW.length)}. ${Math.round(s(12) / Math.max(1, s(9) + s(11)) * 100)} % sponzorovaných produktů je ve slevě.`]); }
-if (slots && ownDisc.length >= 5 && ownFull.length >= 5) ins.push(['ins', D, 'info',
+  ins.push(['ins', D, 'info', `Sponzorované pozice: Prazdroj má pozici 1 průměrně na ${Math.round(s(8) / trW.length)} z ${Math.round(s(9) / trW.length)} dotazů a pozici 4 na ${Math.round(s(10) / trW.length)} z ${Math.round(s(11) / trW.length)}.`]); }
+if (false /* removed 18 Nov 2026: compares different products, misleading */) ins.push(['ins', D, 'info',
   `Slevy: ${Math.round(slotsDisc / slots * 100)} % produktů v top 5 je ve slevě. Medián organické pozice SKU Prazdroje: ve slevě ${mD}, bez slevy ${mF}.`]);
 out.push(...ins.slice(0, 12));
 
@@ -344,6 +350,8 @@ out.push(...ins.slice(0, 12));
       const o1 = num(a.org_pos), o2 = num(b.org_pos);
       const dropped = o1 != null && o2 == null, appeared = o1 == null && o2 != null;
       if (!dropped && !appeared && (o1 == null || o2 == null || Math.abs(o2 - o1) < 3)) continue;
+if (!dropped && !appeared && Math.min(o1, o2) > 20) continue; // moves below the 20th place = noise
+if ((dropped && o1 > 20) || (appeared && o2 > 20)) continue;
       const d = dropped ? 99 : appeared ? -99 : o2 - o1;            // + = worse
       const ka = kwA[b.keyword] || {}, kb = kwB[b.keyword] || {};
       const c1 = num(a.org_pos_clean), c2 = num(b.org_pos_clean);
@@ -351,6 +359,10 @@ out.push(...ins.slice(0, 12));
       const dh = num(kb.total_hits) - num(ka.total_hits), doos = (num(kb.oos_total) ?? 0) - (num(ka.oos_total) ?? 0);
       const disc1 = discOfPromo(a.promo), disc2 = discOfPromo(b.promo);
       let code, detail = '';
+const adA = a.sponsored === '1', adB = b.sponsored === '1';
+if (adB && !adA && o2 == null) { code = 'reklama_vlastni'; detail = 'SKU je teď ve vlastní reklamě – Rohlík ho pak neukazuje organicky, viditelnost se nemění'; }
+else if (adA && !adB && o1 == null) { code = 'reklama_vlastni'; detail = 'SKU už není v reklamě a je zpět v organických výsledcích'; }
+else
       if (b.in_stock === '0' && a.in_stock !== '0') { code = 'sklad_nase'; detail = 'SKU je vyprodané (vyprodané jdou na konec)'; }
       else if (a.in_stock === '0' && b.in_stock === '1') { code = 'sklad_nase'; detail = 'SKU je zpět skladem'; }
       else if (slotN(a.novinka_slot) !== slotN(b.novinka_slot)) { code = 'novinka'; detail = slotN(b.novinka_slot) ? 'SKU je ve slotu novinky (pozice 6)' : 'SKU vypadlo ze slotu novinky'; }
@@ -360,7 +372,8 @@ out.push(...ins.slice(0, 12));
       else if (!!disc1 !== !!disc2) { code = 'sleva'; detail = disc2 ? `SKU nově ve slevě (−${disc2 === 'y' ? '?' : disc2} %)` : 'SKU už není ve slevě'; }
       else if (d < 0 && doos > 0 && -d <= doos + 2) { code = 'sklad_konkurence'; detail = `o ${doos} víc vyprodaných produktů na dotazu – pravděpodobně vypadla konkurence nad SKU`; }
       else if (dh && Math.abs(dh) >= Math.min(Math.abs(d), 50) && Math.sign(dh) === Math.sign(d)) { code = 'nabidka'; detail = `změna nabídky: ${dh > 0 ? '+' : ''}${dh} výsledků na dotazu`; }
-      else { code = 'algoritmus'; detail = 'bez měřitelné příčiny – pravděpodobně popularita/prodeje (signály Rohlíku, které nevidíme)'; }
+      else if (dropped || appeared) { code = 'kolisani'; detail = dropped ? 'vypadlo z výsledků bez zjistitelné příčiny – běžné denní kolísání (~4 % dvojic SKU × dotaz denně)' : 'návrat do výsledků – běžné denní kolísání'; }
+else { code = 'algoritmus'; detail = 'bez měřitelné příčiny – pravděpodobně popularita/prodeje (signály Rohlíku, které nevidíme)'; }
       moves.push([b.keyword, b.pid, o1, o2, code, detail, Math.abs(d)]);
     }
     const cnt = {}; moves.forEach(m => cnt[m[4]] = (cnt[m[4]] || 0) + 1);
