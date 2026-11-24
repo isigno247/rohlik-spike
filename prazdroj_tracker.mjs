@@ -2,6 +2,7 @@
 // One search = full ranking -> every tracked SKU and every competitor is measured at once.
 // Env: CONFIG (default config/prazdroj.json), MODE = full | key, PASSES (optional override)
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 
 const CFG_PATH = process.env.CONFIG || 'config/prazdroj.json';
 const MODE = (process.env.MODE || 'full').toLowerCase();
@@ -20,6 +21,9 @@ const NOVINKA_SLOT = Number(cfg.novinkaSlot || 6);
 const KEY_DEPTH = Number(cfg.limitKey || 200);
 const P1 = Number(cfg.pageSize || 12), P2 = 2 * P1;   // tiles on the first search page / first two pages (incl. sponsored)
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// v4 (24 Nov 2026, Michal Slávik's method): whole result list for every query, raw row per tile, 2 sessions for main queries
+const FULL_DEPTH = Number(cfg.fullDepth || 2000);     // longest query ~1 200 results; API pages by 200
+const MAIN_PASSES = Number(cfg.mainPasses || 2);      // main (key) queries: 2 independent sessions
 
 // go-live log: [{date:'YYYY-MM-DD', pids:[...], keywords:[...]}] -> key "pid|keyword" -> date
 const live = new Map();
@@ -38,13 +42,17 @@ async function search(q, depth = cfg.limit) {
   }
   return merge(pages);
 }
-const merge = ps => ps.length === 1 ? ps[0] : { ...ps[0], productIds: ps.flatMap(d => d.productIds || []),
-  productList: ps.flatMap(d => d.productList || []), impressions: ps[0].impressions };
+const merge = ps => {
+  if (ps.length === 1) return { ...ps[0], _dups: 0 };
+  const all = ps.flatMap(d => d.productIds || []), ids = [...new Set(all)];
+  return { ...ps[0], productIds: ids, _dups: all.length - ids.length,
+    productList: ps.flatMap(d => d.productList || []), impressions: ps[0].impressions };
+};
 async function searchPage(q, offset, limit) {
   const url = `${BASE}?search=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}&companyId=1&warehouseId=${cfg.warehouseId}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const r = await fetch(url, { headers: { 'accept': 'application/json', 'user-agent': 'Mozilla/5.0 (POS Media keyword tracker)' } });
+      const r = await fetch(url, { headers: { 'accept': 'application/json', 'user-agent': 'Mozilla/5.0 (POS Media keyword tracker)' }, signal: AbortSignal.timeout(30000) });
       if (r.ok) return (await r.json()).data;
       if (r.status === 429) await sleep(15000 * attempt);
     } catch (e) { await sleep(3000 * attempt); }
@@ -86,7 +94,8 @@ function snapshot(d) {
     const isClean = !ad && !slot && inStock;
     if (isClean) clean++;
     return { id, pos: i + 1, org: ad ? null : org, orgClean: isClean ? clean : null, ad, isNew, inStock, slot,
-      brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p), disc: discOf(p) };
+      brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p), disc: discOf(p),
+      price: p.price?.full ?? null, priceBefore: p.originalPrice?.full ?? (typeof p.originalPrice === 'number' ? p.originalPrice : null) };
   });
   return { total: d.totalHits ?? ids.length, rows };
 }
@@ -105,14 +114,52 @@ async function main() {
   const PROD = `history/${cfg.client}_products.json`;
   const products = fs.existsSync(PROD) ? JSON.parse(fs.readFileSync(PROD, 'utf8')) : {};
   let n = 0;
-  for (const [k, groups, cur, plan, key] of list) {
+  // raw tile rows (Michal's data fields): one row per tile and session, whole list; written as we go, gzip per run in history/raw/
+  const RAW_COLS = ['run_id', 'date', 'time', 'mode', 'warehouse', 'query', 'set', 'session', 'total_hits', 'depth', 'dups',
+    'position_total', 'position_organic', 'rohlik_id', 'brand', 'name', 'in_stock', 'sponsored', 'novinka', 'novinka_slot',
+    'price', 'price_before', 'discount', 'akce', 'client'];
+  fs.mkdirSync('out', { recursive: true });
+  const RAW_TMP = 'out/raw_tmp.csv';
+  fs.writeFileSync(RAW_TMP, RAW_COLS.join(',') + '\n');
+  const runId = `${pragueDate} ${pragueTime} ${MODE}`;
+  const qc = { incomplete: [], failed: [], retried: [], sessionDiff: [], rawRows: 0 };
+  const isClient = r => own.has(String(r.brand).toLowerCase()) || !!cfg.skus[r.id];
+  const addRaw = (k, key, session, full, d) => {
+    const lines = full.rows.map(r => [runId, pragueDate, pragueTime, MODE, cfg.warehouseId, k, key ? 'main' : 'backend', session,
+      full.total, full.rows.length, d._dups || 0, r.pos, r.org ?? '', r.id, r.brand, r.name, r.inStock ? 1 : 0, r.ad ? 1 : 0,
+      r.isNew ? 1 : 0, r.slot ? 1 : 0, r.price ?? '', r.priceBefore ?? '', r.disc, r.disc ? 1 : 0, isClient(r) ? 1 : 0].map(csvCell).join(','));
+    if (lines.length) fs.appendFileSync(RAW_TMP, lines.join('\n') + '\n');
+    qc.rawRows += lines.length;
+    if (full.rows.length < Math.min(full.total, FULL_DEPTH) - 2) qc.incomplete.push(`${k} (${full.rows.length}/${full.total})`);
+  };
+  // failed queries are tried once more at the end of the run
+  const queue = [...list], retried = new Set();
+  for (let qi = 0; qi < queue.length; qi++) {
+    const [k, groups, cur, plan, key] = queue[qi];
+    if ((qi + 1) % 50 === 0) console.log(`progress: ${qi + 1}/${queue.length} queries, ${n} searches`);
     const snaps = [];
-    for (let pass = 0; pass < PASSES; pass++) {
-      const d = await search(k, key ? KEY_DEPTH : cfg.limit); n++;
-      if (d) snaps.push(snapshot(d));
+    const nPass = key ? Math.max(PASSES, MAIN_PASSES) : PASSES;
+    const legacyDepth = key ? KEY_DEPTH : cfg.limit;
+    const ownBySession = [];
+    for (let pass = 0; pass < nPass; pass++) {
+      const d = await search(k, FULL_DEPTH); n++;
+      if (d) {
+        const full = snapshot(d);
+        addRaw(k, key, pass + 1, full, d);
+        ownBySession.push(Object.fromEntries(full.rows.filter(r => cfg.skus[r.id] && r.org != null).map(r => [r.id, r.org])));
+        // the existing metrics keep their old depth (top 100 / 200), so the dashboard history stays comparable
+        snaps.push({ total: full.total, rows: full.rows.slice(0, legacyDepth) });
+      }
       await sleep(SPACING_MS);
     }
-    if (!snaps.length) { kwRows.push({ k, groups, error: 'no response' }); continue; }
+    if (!snaps.length) {
+      if (!retried.has(k)) { retried.add(k); qc.retried.push(k); queue.push(queue[qi]); continue; }
+      qc.failed.push(k); kwRows.push({ k, groups, error: 'no response' }); continue;
+    }
+    if (ownBySession.length >= 2) {   // session agreement: |position session 1 − session 2| of tracked SKUs
+      const [a, b] = ownBySession, diffs = Object.keys(a).filter(id => id in b).map(id => Math.abs(a[id] - b[id]));
+      if (diffs.length) qc.sessionDiff.push([k, median(diffs)]);
+    }
     const s0 = snaps[0];
     const isOwn = r => own.has(r.brand.toLowerCase()) || !!cfg.skus[r.id];
     // share of search = average over all passes (ads rotate between page loads)
@@ -216,6 +263,15 @@ async function main() {
   fs.writeFileSync(PROD, JSON.stringify(products));
   const kwCsv = write(kwRows, 'keywords');
   const posCsv = write(posRows, 'positions');
+  fs.mkdirSync('history/raw', { recursive: true }); fs.mkdirSync('history/qc', { recursive: true });
+  const stamp = `${pragueDate}_${pragueTime.replace(':', '')}_${MODE}`;
+  fs.writeFileSync(`history/raw/${cfg.client}_${stamp}.csv.gz`, zlib.gzipSync(fs.readFileSync(RAW_TMP)));
+  const sd = qc.sessionDiff.map(x => x[1]);
+  const qcOut = { run: runId, warehouse: cfg.warehouseId, queries: list.length, searches: n, raw_rows: qc.rawRows,
+    incomplete_lists: qc.incomplete, failed: qc.failed, retried: qc.retried,
+    session_agreement: { queries: sd.length, median_diff: median(sd), worst: qc.sessionDiff.sort((x, y) => y[1] - x[1]).slice(0, 5) } };
+  fs.writeFileSync(`history/qc/${cfg.client}_${stamp}.json`, JSON.stringify(qcOut, null, 1));
+  console.log('QC:', JSON.stringify({ ...qcOut, incomplete_lists: qc.incomplete.length, failed: qc.failed.length, retried: qc.retried.length }));
 
   // e-mail parts: slim columns (full detail stays in history/ in git) and small parts –
   // 55k-char parts were created as issues but GitHub never e-mailed them; ~12k parts arrive reliably
