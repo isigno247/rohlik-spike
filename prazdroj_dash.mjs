@@ -8,6 +8,10 @@ const cfg = JSON.parse(fs.readFileSync(process.env.CONFIG || 'config/prazdroj.js
 const own = new Set(cfg.ownBrands.map(b => b.toLowerCase()));
 const isOwn = b => own.has(String(b || '').toLowerCase());
 const controls = new Set((cfg.controls?.pids || []).map(String));
+// keywords dropped from the master file (Prazdroj_Rohlik_keywords_upadted.xlsx, 13 Nov) stay tracked but are hidden everywhere on the dashboard
+const HIDE = new Set((cfg.hideKeywords || []).map(k => String(k).trim().toLowerCase()));
+const shown = r => !HIDE.has(String(r.keyword ?? '').trim().toLowerCase());
+cfg.keywords = cfg.keywords.filter(([k]) => !HIDE.has(String(k).trim().toLowerCase()));
 
 function parse(t) {
   const rows = []; let r = [], f = '', q = false;
@@ -25,8 +29,8 @@ function parse(t) {
   return d.filter(x => x.length >= 10).map(x => Object.fromEntries(h.map((k, i) => [k, x[i] ?? ''])));
 }
 const read = f => fs.existsSync(f) ? parse(fs.readFileSync(f, 'utf8')) : [];
-const kwEvery = read(`history/${cfg.client}_keywords.csv`);
-const posEvery = read(`history/${cfg.client}_positions.csv`);
+const kwEvery = read(`history/${cfg.client}_keywords.csv`).filter(shown);
+const posEvery = read(`history/${cfg.client}_positions.csv`).filter(shown);
 const kwAll = kwEvery.filter(r => r.mode === 'full');
 if (!kwAll.length) { console.log('dash: no full runs yet'); process.exit(0); }
 
