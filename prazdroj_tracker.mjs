@@ -72,6 +72,15 @@ const discOf = p => {
   const m = Math.round(Math.max(...v));
   return m > 0 ? String(m) : 'y';
 };
+// shelf price: an active sale's price, with the regular price as "price before" (crossed-out on the tile);
+// otherwise the regular price, and originalPrice when Rohlík sends one (good price). Sale dates feed Michal's promo-lag check.
+const priceOf = p => {
+  const act = (p.sales || []).filter(s => s.active !== false && s.price?.full);
+  const best = act.sort((a, b) => a.price.full - b.price.full)[0];
+  if (best) return { price: best.price.full, priceBefore: best.originalPrice?.full || p.price?.full || null, saleType: best.type || '', saleFrom: String(best.startedAt || '').slice(0, 10), saleTo: String(best.endsAt || '').slice(0, 10) };
+  const o = p.originalPrice?.full;
+  return { price: p.price?.full ?? null, priceBefore: o && o > (p.price?.full ?? 0) ? o : null, saleType: p.goodPrice ? 'goodPrice' : '', saleFrom: '', saleTo: '' };
+};
 const brandOf = p => (typeof p.brand === 'string' ? p.brand : p.brand?.name) || 'bez značky';
 
 function snapshot(d) {
@@ -95,7 +104,7 @@ function snapshot(d) {
     if (isClean) clean++;
     return { id, pos: i + 1, org: ad ? null : org, orgClean: isClean ? clean : null, ad, isNew, inStock, slot,
       brand: brandOf(p), name: (p.productName || '').slice(0, 45), promo: promoOf(p), disc: discOf(p),
-      price: p.price?.full ?? null, priceBefore: p.originalPrice?.full ?? (typeof p.originalPrice === 'number' ? p.originalPrice : null) };
+      ...priceOf(p) };
   });
   return { total: d.totalHits ?? ids.length, rows };
 }
@@ -117,7 +126,7 @@ async function main() {
   // raw tile rows (Michal's data fields): one row per tile and session, whole list; written as we go, gzip per run in history/raw/
   const RAW_COLS = ['run_id', 'date', 'time', 'mode', 'warehouse', 'query', 'set', 'session', 'total_hits', 'depth', 'dups',
     'position_total', 'position_organic', 'rohlik_id', 'brand', 'name', 'in_stock', 'sponsored', 'novinka', 'novinka_slot',
-    'price', 'price_before', 'discount', 'akce', 'client'];
+    'price', 'price_before', 'discount', 'akce', 'client', 'akce_type', 'akce_from', 'akce_to'];
   fs.mkdirSync('out', { recursive: true });
   const RAW_TMP = 'out/raw_tmp.csv';
   fs.writeFileSync(RAW_TMP, RAW_COLS.join(',') + '\n');
@@ -127,7 +136,7 @@ async function main() {
   const addRaw = (k, key, session, full, d) => {
     const lines = full.rows.map(r => [runId, pragueDate, pragueTime, MODE, cfg.warehouseId, k, key ? 'main' : 'backend', session,
       full.total, full.rows.length, d._dups || 0, r.pos, r.org ?? '', r.id, r.brand, r.name, r.inStock ? 1 : 0, r.ad ? 1 : 0,
-      r.isNew ? 1 : 0, r.slot ? 1 : 0, r.price ?? '', r.priceBefore ?? '', r.disc, r.disc ? 1 : 0, isClient(r) ? 1 : 0].map(csvCell).join(','));
+      r.isNew ? 1 : 0, r.slot ? 1 : 0, r.price ?? '', r.priceBefore ?? '', r.disc, r.disc ? 1 : 0, isClient(r) ? 1 : 0, r.saleType, r.saleFrom, r.saleTo].map(csvCell).join(','));
     if (lines.length) fs.appendFileSync(RAW_TMP, lines.join('\n') + '\n');
     qc.rawRows += lines.length;
     if (full.rows.length < Math.min(full.total, FULL_DEPTH) - 2) qc.incomplete.push(`${k} (${full.rows.length}/${full.total})`);
