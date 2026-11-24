@@ -1,0 +1,36 @@
+{
+ "run": "2026-11-25 00:27 key",
+ "warehouse": 8791,
+ "queries": 21,
+ "searches": 42,
+ "raw_rows": 4500,
+ "incomplete_lists": [],
+ "failed": [],
+ "retried": [],
+ "session_agreement": {
+  "queries": 21,
+  "median_diff": 0,
+  "worst": [
+   [
+    "ležák",
+    1
+   ],
+   [
+    "pivo",
+    1
+   ],
+   [
+    "radler",
+    1
+   ],
+   [
+    "birell",
+    0
+   ],
+   [
+    "cider",
+    0
+   ]
+  ]
+ }
+}
