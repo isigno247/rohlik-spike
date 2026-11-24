@@ -110,6 +110,27 @@ const slotOf = (all, s) => { const [b, k] = mode(all.map(x => x[`ad${s}_brand`])
 //      Queries measured 3x a day: the last 45 runs; the rest: the last 14 full runs.
 //      From brand_best (all brands, recorded since 3 Nov); older runs: Prazdroj brands only, from the positions history.
 const brandOfPid = Object.fromEntries(cfg.skuList.map(([p, b]) => [String(p), b]));
+// sb – share of search per brand and full run (Michal's method: a brand only on queries relevant to it = keywords that any of
+//      its SKUs is assigned to, backend or suggested; ALL Prazdroj products of that brand in the results count, not only the
+//      assigned ones). [d, time, brand, queries, share of first 12 tiles incl. ads, share of first 12 organic results]
+{
+  const relBy = {};
+  for (const [k, , c, p] of cfg.keywords) for (const i of [...c, ...p]) { const b = cfg.skuList[i] && cfg.skuList[i][1]; if (b) (relBy[b] ??= new Set()).add(k); }
+  const bOf = (r) => brandOfPid[String(r.pid)] || r.brand;
+  for (const d of runs) {
+    const kws = Object.fromEntries(kwOn(d).filter((r) => num(r.total_hits) > 0 && BASE.has(r.keyword)).map((r) => [r.keyword, r]));
+    const byKw = {};
+    for (const r of posOn(d)) (byKw[r.keyword] ??= []).push(r);
+    for (const [b, set] of Object.entries(relBy)) {
+      const ks = [...set].filter((k) => kws[k]);
+      if (!ks.length) continue;
+      const share = (k, inTop) => { const n = Math.min(12, num(kws[k].total_hits)); const ids = new Set((byKw[k] || []).filter((r) => bOf(r) === b && inTop(r)).map((r) => r.pid)); return Math.min(1, ids.size / n); };
+      const t12 = avg(ks.map((k) => share(k, (r) => { const p = num(r.pos_incl_ads); return p !== null && p <= 12; })));
+      const o12 = avg(ks.map((k) => share(k, (r) => { const p = num(r.org_pos); return p !== null && p <= 12; })));
+      zl.push(['sb', d.slice(0, 10), d.slice(11), String(b).replace(/[|;:,]/g, ' '), ks.length, r3(t12), r3(o12)]);
+    }
+  }
+}
 const krRuns = new Set(WF.slice(-14)), krAll = new Set(WA.slice(-45));     // last 14 full runs; 3x-a-day queries: last 45 runs
 const posRunBy = {};
 for (const r of posEvery) if (r.org_pos !== '' && WA.includes(runId(r))) {
