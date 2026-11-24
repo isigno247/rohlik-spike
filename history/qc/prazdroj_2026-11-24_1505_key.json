@@ -1,0 +1,36 @@
+{
+ "run": "2026-11-24 15:05 key",
+ "warehouse": 8791,
+ "queries": 21,
+ "searches": 42,
+ "raw_rows": 4503,
+ "incomplete_lists": [],
+ "failed": [],
+ "retried": [],
+ "session_agreement": {
+  "queries": 21,
+  "median_diff": 0,
+  "worst": [
+   [
+    "nealko pivo",
+    1
+   ],
+   [
+    "nealkoholické pivo",
+    1
+   ],
+   [
+    "pivo v plechovce",
+    1
+   ],
+   [
+    "radler",
+    1
+   ],
+   [
+    "birell",
+    0
+   ]
+  ]
+ }
+}
