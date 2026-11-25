@@ -167601,3 +167601,408 @@ date,time,mode,keyword,pid,brand,org_pos,pos_incl_ads,sponsored,promo,kw_status,
 2026-11-25,19:30,full,zero alcohol,1462434,Elektrárna,7,7,0,longtermAction -25%,not linked,pre,1/1,1,0,0/1,7
 2026-11-25,19:30,full,zero alcohol,1442539,Birell,9,9,0,,planned,pre,1/1,1,0,0/1,9
 2026-11-25,19:30,full,zero alcohol,1464713,Velkopopovický Kozel,11,11,0,longtermAction -5%,planned,pre,1/1,1,0,0/1,11
+2026-11-26,00:03,key,birell,1479158,Birell,7,1,1,longtermAction -3%,current,pre,1/2,1,0,0/2,7
+2026-11-26,00:03,key,birell,1294219,Birell,1,2,0,,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,birell,1479160,Birell,2,3,0,longtermAction -12%,current,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,birell,1442540,Birell,3,4,0,,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,birell,734663,Birell,4,5,0,,current,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,birell,1311213,Birell,5,1,0,longtermAction -6%,not linked,pre,1/2,1,0,0/2,5
+2026-11-26,00:03,key,birell,1461276,Birell,5,6,0,,current,pre,2/2,1,0,0/2,5
+2026-11-26,00:03,key,birell,762961,Birell,6,7,0,,current,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,birell,1442539,Birell,8,9,0,,current,pre,2/2,1,0,0/2,8
+2026-11-26,00:03,key,birell,1461277,Birell,9,10,0,,current,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,birell,1479161,Birell,10,11,0,,current,pre,2/2,1,0,0/2,10
+2026-11-26,00:03,key,birell,1438192,Birell,13,14,0,longtermAction -4%,current,pre,2/2,1,0,0/2,13
+2026-11-26,00:03,key,birell,1457711,Birell,14,15,0,longtermAction -13%,current,pre,2/2,1,0,0/2,14
+2026-11-26,00:03,key,birell,1479159,Birell,15,16,0,,current,pre,2/2,1,0,0/2,15
+2026-11-26,00:03,key,birell,732997,Birell,16,17,0,longtermAction -9%,current,pre,2/2,1,0,0/2,16
+2026-11-26,00:03,key,birell,1469181,Birell,17,18,0,longtermAction -4%,current,pre,2/2,1,0,0/2,17
+2026-11-26,00:03,key,birell,1479150,Birell,18,19,0,,current,pre,2/2,1,0,0/2,18
+2026-11-26,00:03,key,birell,1420722,Birell,19,20,0,longtermAction -6%,current,pre,2/2,1,0,0/2,19
+2026-11-26,00:03,key,birell,1469182,Birell,20,21,0,,current,pre,2/2,1,0,0/2,20
+2026-11-26,00:03,key,cider,1479156,Frisco,2,1,1,longtermAction -13%,not linked,pre,1/2,1,0,0/2,2
+2026-11-26,00:03,key,cider,1479148,Frisco,1,2,0,longtermAction -14%,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,cider,1479157,Frisco,6,7,0,longtermAction -13%,current,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,cider,1479149,Frisco,12,13,0,,not linked,pre,2/2,1,0,0/2,12
+2026-11-26,00:03,key,cider,1479155,Frisco,13,14,0,,current,pre,2/2,1,0,0/2,13
+2026-11-26,00:03,key,cider,1455271,Frisco,19,20,0,longtermAction -13%,current,pre,2/2,1,0,0/2,19
+2026-11-26,00:03,key,cider,1436518,Frisco,20,1,0,longtermAction -14%,planned,pre,1/2,1,0,0/2,20
+2026-11-26,00:03,key,cider,1457705,Frisco,21,22,0,,current,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,cider,1323671,Frisco,23,24,0,,planned,pre,2/2,1,0,0/2,23
+2026-11-26,00:03,key,cider,1455273,Frisco,24,25,0,,planned,pre,2/2,1,0,0/2,24
+2026-11-26,00:03,key,cider,1479153,Frisco,45,46,0,longtermAction -14%,not linked,pre,2/2,0,0,0/2,
+2026-11-26,00:03,key,černé pivo,1293415,Velkopopovický Kozel,,1,1,longtermAction -7%,not linked,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,černé pivo,1482158,Velkopopovický Kozel,17,19,0,,planned,pre,2/2,1,0,0/2,17
+2026-11-26,00:03,key,černé pivo,1471175,Elektrárna,39,41,0,,not linked,pre,2/2,1,0,0/2,39
+2026-11-26,00:03,key,černé pivo,1293081,Velkopopovický Kozel,44,46,0,,not linked,pre,2/2,1,0,0/2,44
+2026-11-26,00:03,key,černé pivo,1303859,Velkopopovický Kozel,45,47,0,,planned,pre,2/2,1,0,0/2,45
+2026-11-26,00:03,key,frisco,1479157,Frisco,5,1,1,longtermAction -13%,current,pre,1/2,1,0,0/2,5
+2026-11-26,00:03,key,frisco,1479148,Frisco,1,2,0,longtermAction -14%,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,frisco,1436518,Frisco,2,3,0,longtermAction -14%,current,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,frisco,1479156,Frisco,3,4,0,longtermAction -13%,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,frisco,1457705,Frisco,4,5,0,,current,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,frisco,1455271,Frisco,5,1,0,longtermAction -13%,not linked,pre,1/2,1,0,0/2,5
+2026-11-26,00:03,key,frisco,1479149,Frisco,6,7,0,,current,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,frisco,1323671,Frisco,7,8,0,,not linked,pre,2/2,1,0,0/2,7
+2026-11-26,00:03,key,frisco,1455273,Frisco,8,9,0,,current,pre,2/2,1,0,0/2,8
+2026-11-26,00:03,key,frisco,1479155,Frisco,9,10,0,,current,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,frisco,1479153,Frisco,10,11,0,longtermAction -14%,current,pre,2/2,0,0,0/2,
+2026-11-26,00:03,key,gambrinus,1320949,Gambrinus,1,1,0,,not linked,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,gambrinus,1293421,Gambrinus,2,2,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,gambrinus,733491,Gambrinus,3,3,0,longtermAction -11%,not linked,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,gambrinus,1457714,Gambrinus,4,4,0,longtermAction -30%,current,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,gambrinus,1311209,Gambrinus,5,5,0,,not linked,pre,2/2,1,0,0/2,5
+2026-11-26,00:03,key,ipa,1462439,Elektrárna,5,6,0,longtermAction -28%,current,pre,2/2,1,0,0/2,5
+2026-11-26,00:03,key,ipa,1461276,Birell,10,11,0,,current,pre,2/2,1,0,0/2,10
+2026-11-26,00:03,key,ipa,1462434,Elektrárna,11,12,0,longtermAction -25%,current,pre,2/2,1,0,0/2,11
+2026-11-26,00:03,key,ipa,1473383,Elektrárna,24,25,0,,current,pre,2/2,1,0,0/2,24
+2026-11-26,00:03,key,ipa,1462437,Elektrárna,41,42,0,longtermAction -11%,planned,pre,2/2,1,0,0/2,41
+2026-11-26,00:03,key,kombucha,1483038,Elektrárna,14,15,0,,current,pre,2/2,1,0,0/2,14
+2026-11-26,00:03,key,kombucha,1483039,Elektrárna,19,20,0,,current,pre,2/2,1,0,0/2,19
+2026-11-26,00:03,key,kombucha,1483040,Elektrárna,21,22,0,,current,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,kozel,1482160,Velkopopovický Kozel,7,1,1,longtermAction -10%,current,pre,1/2,1,0,0/2,7
+2026-11-26,00:03,key,kozel,1455270,Velkopopovický Kozel,1,2,0,longtermAction -6% + expiration -19%,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,kozel,1320945,Velkopopovický Kozel,2,3,0,longtermAction -3%,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,kozel,1293415,Velkopopovický Kozel,3,4,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,kozel,1479151,Velkopopovický Kozel,4,5,0,longtermAction -8%,current,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,kozel,1479152,Velkopopovický Kozel,5,1,0,longtermAction -9%,current,pre,1/2,1,0,0/2,5
+2026-11-26,00:03,key,kozel,1479154,Velkopopovický Kozel,5,6,0,,current,pre,2/2,1,0,0/2,5
+2026-11-26,00:03,key,kozel,1464713,Velkopopovický Kozel,6,7,0,longtermAction -5%,current,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,kozel,1482158,Velkopopovický Kozel,8,9,0,,current,pre,2/2,1,0,0/2,8
+2026-11-26,00:03,key,kozel,1482159,Velkopopovický Kozel,9,10,0,,current,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,kozel,735381,Velkopopovický Kozel,10,11,0,,current,pre,2/2,1,0,0/2,10
+2026-11-26,00:03,key,kozel,1293081,Velkopopovický Kozel,11,12,0,,not linked,pre,2/2,1,0,0/2,11
+2026-11-26,00:03,key,kozel,735393,Velkopopovický Kozel,12,13,0,,not linked,pre,2/2,1,0,0/2,12
+2026-11-26,00:03,key,kozel,1303859,Velkopopovický Kozel,13,14,0,,not linked,pre,2/2,1,0,0/2,13
+2026-11-26,00:03,key,ležák,734585,Pilsner Urquell,1,2,0,,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,ležák,1455268,Pilsner Urquell,2,3,0,longtermAction -7%,current,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,ležák,1457714,Gambrinus,3,5,0,longtermAction -30%,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,ležák,1320947,Pilsner Urquell,10,12,0,sale -13%,current,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,ležák,1479152,Velkopopovický Kozel,14,4,0,longtermAction -9%,current,pre,1/2,1,0,0/2,13
+2026-11-26,00:03,key,ležák,1455270,Velkopopovický Kozel,22,24,0,longtermAction -6% + expiration -19%,current,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,ležák,1320999,Radegast,20,22,0,longtermAction -7%,planned,pre,2/2,1,0,0/2,19
+2026-11-26,00:03,key,ležák,1471176,Elektrárna,25,27,0,,current,pre,2/2,1,0,0/2,24
+2026-11-26,00:03,key,ležák,1457704,Radegast,28,30,0,,current,pre,2/2,1,0,0/2,27
+2026-11-26,00:03,key,ležák,1457708,Proud,29,31,0,longtermAction -6%,current,pre,2/2,1,0,0/2,28
+2026-11-26,00:03,key,ležák,1464715,Radegast,41,43,0,,current,pre,2/2,1,0,0/2,40
+2026-11-26,00:03,key,ležák,1479151,Velkopopovický Kozel,42,44,0,longtermAction -8%,current,pre,2/2,1,0,0/2,41
+2026-11-26,00:03,key,ležák,1455267,Radegast,50,52,0,longtermAction -7%,current,pre,2/2,1,0,0/2,49
+2026-11-26,00:03,key,ležák,1311209,Gambrinus,56,58,0,,planned,pre,2/2,1,0,0/2,55
+2026-11-26,00:03,key,ležák,1457709,Radegast,61,63,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,60
+2026-11-26,00:03,key,ležák,1377729,Pilsner Urquell,66,68,0,longtermAction -10%,current,pre,2/2,1,0,0/2,65
+2026-11-26,00:03,key,ležák,1479154,Velkopopovický Kozel,68,70,0,,current,pre,2/2,1,0,0/2,67
+2026-11-26,00:03,key,ležák,1457706,Proud,72,74,0,,not linked,pre,2/2,1,0,0/2,71
+2026-11-26,00:03,key,ležák,1421860,Peroni,79,81,0,,current,pre,2/2,1,0,0/2,78
+2026-11-26,00:03,key,ležák,1320951,Excelent,86,88,0,,not linked,pre,2/2,1,0,0/2,85
+2026-11-26,00:03,key,ležák,1471175,Elektrárna,88,90,0,,current,pre,2/2,1,0,0/2,87
+2026-11-26,00:03,key,ležák,1462435,Elektrárna,115,117,0,longtermAction -17%,current,pre,2/2,1,0,0/2,114
+2026-11-26,00:03,key,ležák,1442533,Radegast,127,129,0,,current,pre,2/2,1,0,0/2,126
+2026-11-26,00:03,key,ležák,1442532,Pilsner Urquell,129,131,0,,current,pre,2/2,1,0,0/2,128
+2026-11-26,00:03,key,ležák,735393,Velkopopovický Kozel,134,136,0,,planned,pre,2/2,1,0,0/2,133
+2026-11-26,00:03,key,ležák,1303859,Velkopopovický Kozel,135,137,0,,not linked,pre,2/2,1,0,0/2,134
+2026-11-26,00:03,key,nealko,762961,Birell,7,9,0,,current,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,nealko,734663,Birell,10,12,0,,planned,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,nealko,1294219,Birell,18,20,0,,planned,pre,2/2,1,0,0/2,17
+2026-11-26,00:03,key,nealko,1479160,Birell,21,23,0,longtermAction -12%,planned,pre,2/2,1,0,0/2,20
+2026-11-26,00:03,key,nealko,1462434,Elektrárna,27,29,0,longtermAction -25%,planned,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,nealko,1442539,Birell,28,30,0,,current,pre,2/2,1,0,0/2,27
+2026-11-26,00:03,key,nealko,1311213,Birell,29,31,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,28
+2026-11-26,00:03,key,nealko,1479158,Birell,32,34,0,longtermAction -3%,planned,pre,2/2,1,0,0/2,31
+2026-11-26,00:03,key,nealko,1464713,Velkopopovický Kozel,33,4,0,longtermAction -5%,current,pre,1/2,1,0,0/2,32
+2026-11-26,00:03,key,nealko,1473383,Elektrárna,37,39,0,,planned,pre,2/2,1,0,0/2,36
+2026-11-26,00:03,key,nealko,1479161,Birell,46,48,0,,planned,pre,2/2,1,0,0/2,45
+2026-11-26,00:03,key,nealko,1482160,Velkopopovický Kozel,48,50,0,longtermAction -10%,planned,pre,2/2,1,0,0/2,47
+2026-11-26,00:03,key,nealko,1479159,Birell,51,53,0,,planned,pre,2/2,1,0,0/2,50
+2026-11-26,00:03,key,nealko,732997,Birell,55,57,0,longtermAction -9%,planned,pre,2/2,1,0,0/2,54
+2026-11-26,00:03,key,nealko,1457711,Birell,57,59,0,longtermAction -13%,planned,pre,2/2,1,0,0/2,56
+2026-11-26,00:03,key,nealko,1482158,Velkopopovický Kozel,60,62,0,,planned,pre,2/2,1,0,0/2,59
+2026-11-26,00:03,key,nealko,1438192,Birell,61,63,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,60
+2026-11-26,00:03,key,nealko,1420722,Birell,64,66,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,63
+2026-11-26,00:03,key,nealko,1442540,Birell,65,67,0,,current,pre,2/2,1,0,0/2,64
+2026-11-26,00:03,key,nealko,1482159,Velkopopovický Kozel,66,68,0,,planned,pre,2/2,1,0,0/2,65
+2026-11-26,00:03,key,nealko,1469181,Birell,71,73,0,longtermAction -4%,current,pre,2/2,1,0,0/2,70
+2026-11-26,00:03,key,nealko,1479150,Birell,73,75,0,,planned,pre,2/2,1,0,0/2,72
+2026-11-26,00:03,key,nealko,1469182,Birell,75,77,0,,current,pre,2/2,1,0,0/2,74
+2026-11-26,00:03,key,nealko,1461277,Birell,80,82,0,,current,pre,2/2,1,0,0/2,79
+2026-11-26,00:03,key,nealko,1461276,Birell,85,87,0,,current,pre,2/2,1,0,0/2,84
+2026-11-26,00:03,key,nealko pivo,1479160,Birell,8,10,0,longtermAction -12%,current,pre,2/2,1,0,0/2,8
+2026-11-26,00:03,key,nealko pivo,1294219,Birell,9,11,0,,current,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,nealko pivo,1462434,Elektrárna,11,13,0,longtermAction -25%,planned,pre,2/2,1,0,0/2,11
+2026-11-26,00:03,key,nealko pivo,1442540,Birell,16,18,0,,planned,pre,2/2,1,0,0/2,16
+2026-11-26,00:03,key,nealko pivo,1464713,Velkopopovický Kozel,18,20,0,longtermAction -5%,planned,pre,2/2,1,0,0/2,18
+2026-11-26,00:03,key,nealko pivo,734663,Birell,20,22,0,,current,pre,2/2,1,0,0/2,20
+2026-11-26,00:03,key,nealko pivo,762961,Birell,21,23,0,,current,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,nealko pivo,1311213,Birell,22,24,0,longtermAction -6%,current,pre,2/2,1,0,0/2,22
+2026-11-26,00:03,key,nealko pivo,1473383,Elektrárna,23,25,0,,planned,pre,2/2,1,0,0/2,23
+2026-11-26,00:03,key,nealko pivo,1479158,Birell,24,1,0,longtermAction -3%,current,pre,1/2,1,0,0/2,24
+2026-11-26,00:03,key,nealko pivo,1461276,Birell,30,32,0,,current,pre,2/2,1,0,0/2,29
+2026-11-26,00:03,key,nealko pivo,1442539,Birell,32,34,0,,current,pre,2/2,1,0,0/2,31
+2026-11-26,00:03,key,nealko pivo,1479161,Birell,36,38,0,,current,pre,2/2,1,0,0/2,35
+2026-11-26,00:03,key,nealko pivo,1461277,Birell,43,45,0,,planned,pre,2/2,1,0,0/2,42
+2026-11-26,00:03,key,nealko pivo,1479159,Birell,47,49,0,,current,pre,2/2,1,0,0/2,46
+2026-11-26,00:03,key,nealko pivo,732997,Birell,50,52,0,longtermAction -9%,current,pre,2/2,1,0,0/2,49
+2026-11-26,00:03,key,nealko pivo,1482160,Velkopopovický Kozel,60,4,0,longtermAction -10%,planned,pre,1/2,1,0,0/2,60
+2026-11-26,00:03,key,nealko pivo,1457711,Birell,67,69,0,longtermAction -13%,planned,pre,2/2,1,0,0/2,66
+2026-11-26,00:03,key,nealko pivo,1438192,Birell,68,70,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,67
+2026-11-26,00:03,key,nealko pivo,1482158,Velkopopovický Kozel,72,74,0,,planned,pre,2/2,1,0,0/2,72
+2026-11-26,00:03,key,nealko pivo,1479150,Birell,81,83,0,,planned,pre,2/2,1,0,0/2,80
+2026-11-26,00:03,key,nealko pivo,1469181,Birell,84,86,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,83
+2026-11-26,00:03,key,nealko pivo,1420722,Birell,86,88,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,85
+2026-11-26,00:03,key,nealko pivo,1469182,Birell,88,90,0,,planned,pre,2/2,1,0,0/2,87
+2026-11-26,00:03,key,nealko pivo,1482159,Velkopopovický Kozel,89,91,0,,planned,pre,2/2,1,0,0/2,88
+2026-11-26,00:03,key,nealko pivo,1479152,Velkopopovický Kozel,102,104,0,longtermAction -9%,not linked,pre,1/2,1,0,0/2,102
+2026-11-26,00:03,key,nealkoholické pivo,1479160,Birell,10,1,1,longtermAction -12%,current,pre,1/2,1,0,0/2,9
+2026-11-26,00:03,key,nealkoholické pivo,1462434,Elektrárna,7,9,0,longtermAction -25%,current,pre,2/2,1,0,0/2,7
+2026-11-26,00:03,key,nealkoholické pivo,1442540,Birell,14,16,0,,current,pre,2/2,1,0,0/2,14
+2026-11-26,00:03,key,nealkoholické pivo,1464713,Velkopopovický Kozel,16,18,0,longtermAction -5%,current,pre,2/2,1,0,0/2,16
+2026-11-26,00:03,key,nealkoholické pivo,762961,Birell,21,23,0,,not linked,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,nealkoholické pivo,1479158,Birell,22,24,0,longtermAction -3%,current,pre,2/2,1,0,0/2,22
+2026-11-26,00:03,key,nealkoholické pivo,1294219,Birell,23,25,0,,not linked,pre,2/2,1,0,0/2,23
+2026-11-26,00:03,key,nealkoholické pivo,734663,Birell,24,26,0,,not linked,pre,2/2,1,0,0/2,24
+2026-11-26,00:03,key,nealkoholické pivo,1461276,Birell,26,28,0,,current,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,nealkoholické pivo,1442539,Birell,32,34,0,,current,pre,2/2,1,0,0/2,32
+2026-11-26,00:03,key,nealkoholické pivo,1479161,Birell,37,39,0,,current,pre,2/2,1,0,0/2,37
+2026-11-26,00:03,key,nealkoholické pivo,1311213,Birell,41,43,0,longtermAction -6%,not linked,pre,2/2,1,0,0/2,41
+2026-11-26,00:03,key,nealkoholické pivo,1473383,Elektrárna,23,25,0,,current,pre,2/2,1,0,0/2,22
+2026-11-26,00:03,key,nealkoholické pivo,1482160,Velkopopovický Kozel,47,1,0,longtermAction -10%,current,pre,1/2,1,0,0/2,47
+2026-11-26,00:03,key,nealkoholické pivo,1479159,Birell,49,51,0,,current,pre,2/2,1,0,0/2,48
+2026-11-26,00:03,key,nealkoholické pivo,1461277,Birell,51,53,0,,planned,pre,2/2,1,0,0/2,50
+2026-11-26,00:03,key,nealkoholické pivo,1482158,Velkopopovický Kozel,62,64,0,,current,pre,2/2,1,0,0/2,61
+2026-11-26,00:03,key,nealkoholické pivo,1479150,Birell,73,75,0,,current,pre,2/2,1,0,0/2,72
+2026-11-26,00:03,key,nealkoholické pivo,1457711,Birell,74,76,0,longtermAction -13%,not linked,pre,2/2,1,0,0/2,73
+2026-11-26,00:03,key,nealkoholické pivo,1438192,Birell,75,77,0,longtermAction -4%,not linked,pre,2/2,1,0,0/2,74
+2026-11-26,00:03,key,nealkoholické pivo,1482159,Velkopopovický Kozel,80,82,0,,current,pre,2/2,1,0,0/2,79
+2026-11-26,00:03,key,nealkoholické pivo,732997,Birell,82,84,0,longtermAction -9%,not linked,pre,2/2,1,0,0/2,81
+2026-11-26,00:03,key,nealkoholické pivo,1469181,Birell,89,91,0,longtermAction -4%,not linked,pre,2/2,1,0,0/2,88
+2026-11-26,00:03,key,nealkoholické pivo,1420722,Birell,94,96,0,longtermAction -6%,not linked,pre,2/2,1,0,0/2,93
+2026-11-26,00:03,key,nealkoholické pivo,1469182,Birell,95,97,0,,not linked,pre,2/2,1,0,0/2,94
+2026-11-26,00:03,key,ochucené pivo,1482160,Velkopopovický Kozel,,1,1,longtermAction -10%,planned,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,ochucené pivo,1455271,Frisco,49,4,1,longtermAction -13%,current,pre,1/2,1,0,0/2,49
+2026-11-26,00:03,key,ochucené pivo,1294219,Birell,3,5,0,,planned,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,ochucené pivo,1479160,Birell,4,1,0,longtermAction -12%,planned,pre,1/2,1,0,0/2,4
+2026-11-26,00:03,key,ochucené pivo,1479161,Birell,9,11,0,,current,pre,2/2,1,0,0/2,9
+2026-11-26,00:03,key,ochucené pivo,1311213,Birell,10,12,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,10
+2026-11-26,00:03,key,ochucené pivo,1479158,Birell,12,14,0,longtermAction -3%,planned,pre,2/2,1,0,0/2,12
+2026-11-26,00:03,key,ochucené pivo,732997,Birell,14,16,0,longtermAction -9%,current,pre,2/2,1,0,0/2,14
+2026-11-26,00:03,key,ochucené pivo,1482158,Velkopopovický Kozel,21,23,0,,current,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,ochucené pivo,1457711,Birell,25,27,0,longtermAction -13%,planned,pre,2/2,1,0,0/2,25
+2026-11-26,00:03,key,ochucené pivo,1479159,Birell,26,28,0,,planned,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,ochucené pivo,1438192,Birell,27,29,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,27
+2026-11-26,00:03,key,ochucené pivo,1479150,Birell,30,32,0,,planned,pre,2/2,1,0,0/2,30
+2026-11-26,00:03,key,ochucené pivo,1469181,Birell,32,34,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,32
+2026-11-26,00:03,key,ochucené pivo,1420722,Birell,34,36,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,34
+2026-11-26,00:03,key,ochucené pivo,1482159,Velkopopovický Kozel,35,37,0,,planned,pre,2/2,1,0,0/2,35
+2026-11-26,00:03,key,ochucené pivo,1469182,Birell,36,38,0,,planned,pre,2/2,1,0,0/2,36
+2026-11-26,00:03,key,ochucené pivo,1457708,Proud,37,39,0,longtermAction -6%,current,pre,2/2,1,0,0/2,37
+2026-11-26,00:03,key,ochucené pivo,1462437,Elektrárna,40,42,0,longtermAction -11%,current,pre,2/2,1,0,0/2,40
+2026-11-26,00:03,key,ochucené pivo,1473384,Elektrárna,43,45,0,,current,pre,2/2,1,0,0/2,43
+2026-11-26,00:03,key,ochucené pivo,1457706,Proud,44,46,0,,current,pre,2/2,1,0,0/2,44
+2026-11-26,00:03,key,ochucené pivo,1480131,Proud,45,47,0,longtermAction -21%,current,pre,2/2,1,0,0/2,45
+2026-11-26,00:03,key,ochucené pivo,1436518,Frisco,51,53,0,longtermAction -14%,current,pre,2/2,1,0,0/2,51
+2026-11-26,00:03,key,ochucené pivo,1457705,Frisco,56,58,0,,current,pre,2/2,1,0,0/2,56
+2026-11-26,00:03,key,ochucené pivo,1323671,Frisco,63,65,0,,current,pre,2/2,1,0,0/2,63
+2026-11-26,00:03,key,ochucené pivo,1479148,Frisco,75,77,0,longtermAction -14%,not linked,pre,2/2,1,0,0/2,75
+2026-11-26,00:03,key,ochucené pivo,1479156,Frisco,76,78,0,longtermAction -13%,not linked,pre,2/2,1,0,0/2,76
+2026-11-26,00:03,key,ochucené pivo,1479149,Frisco,78,80,0,,not linked,pre,2/2,1,0,0/2,78
+2026-11-26,00:03,key,ochucené pivo,1479155,Frisco,79,81,0,,not linked,pre,2/2,1,0,0/2,79
+2026-11-26,00:03,key,ochucené pivo,1455273,Frisco,85,87,0,,not linked,pre,2/2,1,0,0/2,85
+2026-11-26,00:03,key,ochucené pivo,1479153,Frisco,90,92,0,longtermAction -14%,not linked,pre,2/2,0,0,0/2,
+2026-11-26,00:03,key,pilsner urquell,1320947,Pilsner Urquell,,1,1,sale -13%,current,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,pilsner urquell,734585,Pilsner Urquell,1,2,0,,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,pilsner urquell,1455268,Pilsner Urquell,,4,1,longtermAction -7%,current,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,pilsner urquell,1377729,Pilsner Urquell,3,5,0,longtermAction -10%,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,pilsner urquell,1442532,Pilsner Urquell,8,10,0,,current,pre,2/2,1,0,0/2,7
+2026-11-26,00:03,key,pivo,1479148,Frisco,191,1,1,longtermAction -14%,not linked,pre,1/2,1,0,0/2,190
+2026-11-26,00:03,key,pivo,734585,Pilsner Urquell,1,2,0,,current,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,pivo,1455268,Pilsner Urquell,2,3,0,longtermAction -7%,current,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,pivo,1464713,Velkopopovický Kozel,,4,1,longtermAction -5%,current,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,pivo,1457714,Gambrinus,5,7,0,longtermAction -30%,current,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,pivo,1320947,Pilsner Urquell,11,13,0,sale -13%,current,pre,2/2,1,0,0/2,10
+2026-11-26,00:03,key,pivo,1455270,Velkopopovický Kozel,16,18,0,longtermAction -6% + expiration -19%,current,pre,2/2,1,0,0/2,15
+2026-11-26,00:03,key,pivo,1471176,Elektrárna,18,20,0,,current,pre,2/2,1,0,0/2,17
+2026-11-26,00:03,key,pivo,1457708,Proud,20,22,0,longtermAction -6%,current,pre,2/2,1,0,0/2,19
+2026-11-26,00:03,key,pivo,1293421,Gambrinus,22,24,0,longtermAction -10%,current,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,pivo,1455267,Radegast,32,34,0,longtermAction -7%,current,pre,2/2,1,0,0/2,31
+2026-11-26,00:03,key,pivo,1320999,Radegast,33,35,0,longtermAction -7%,planned,pre,2/2,1,0,0/2,32
+2026-11-26,00:03,key,pivo,1457704,Radegast,35,37,0,,planned,pre,2/2,1,0,0/2,34
+2026-11-26,00:03,key,pivo,1464715,Radegast,37,39,0,,current,pre,2/2,1,0,0/2,36
+2026-11-26,00:03,key,pivo,1320959,Primus,43,45,0,,not linked,pre,2/2,1,0,0/2,42
+2026-11-26,00:03,key,pivo,1479152,Velkopopovický Kozel,47,49,0,longtermAction -9%,current,pre,2/2,1,0,0/2,46
+2026-11-26,00:03,key,pivo,1457709,Radegast,52,54,0,longtermAction -10%,current,pre,2/2,1,0,0/2,51
+2026-11-26,00:03,key,pivo,1377729,Pilsner Urquell,52,54,0,longtermAction -10%,current,pre,2/2,1,0,0/2,51
+2026-11-26,00:03,key,pivo,1320989,Klasik,55,57,0,,not linked,pre,2/2,1,0,0/2,54
+2026-11-26,00:03,key,pivo,1457706,Proud,62,64,0,,not linked,pre,2/2,1,0,0/2,61
+2026-11-26,00:03,key,pivo,1462437,Elektrárna,64,66,0,longtermAction -11%,current,pre,2/2,1,0,0/2,63
+2026-11-26,00:03,key,pivo,1479151,Velkopopovický Kozel,69,71,0,longtermAction -8%,current,pre,2/2,1,0,0/2,68
+2026-11-26,00:03,key,pivo,1293415,Velkopopovický Kozel,74,76,0,longtermAction -7%,planned,pre,2/2,1,0,0/2,73
+2026-11-26,00:03,key,pivo,1421860,Peroni,78,80,0,,current,pre,2/2,1,0,0/2,77
+2026-11-26,00:03,key,pivo,1311209,Gambrinus,78,80,0,,current,pre,2/2,1,0,0/2,77
+2026-11-26,00:03,key,pivo,1320951,Excelent,83,85,0,,not linked,pre,2/2,1,0,0/2,82
+2026-11-26,00:03,key,pivo,1471175,Elektrárna,85,87,0,,current,pre,2/2,1,0,0/2,84
+2026-11-26,00:03,key,pivo,733491,Gambrinus,93,95,0,longtermAction -11%,current,pre,2/2,1,0,0/2,92
+2026-11-26,00:03,key,pivo,1320945,Velkopopovický Kozel,95,97,0,longtermAction -3%,planned,pre,2/2,1,0,0/2,94
+2026-11-26,00:03,key,pivo,1479154,Velkopopovický Kozel,96,98,0,,current,pre,2/2,1,0,0/2,95
+2026-11-26,00:03,key,pivo,1320949,Gambrinus,102,104,0,,current,pre,2/2,1,0,0/2,101
+2026-11-26,00:03,key,pivo,1480131,Proud,103,105,0,longtermAction -21%,current,pre,2/2,1,0,0/2,102
+2026-11-26,00:03,key,pivo,1325149,Radegast,134,136,0,,current,pre,2/2,1,0,0/2,133
+2026-11-26,00:03,key,pivo,762961,Birell,140,142,0,,current,pre,2/2,1,0,0/2,139
+2026-11-26,00:03,key,pivo,734663,Birell,143,145,0,,current,pre,2/2,1,0,0/2,142
+2026-11-26,00:03,key,pivo,1462439,Elektrárna,160,162,0,longtermAction -28%,current,pre,2/2,1,0,0/2,159
+2026-11-26,00:03,key,pivo,1294219,Birell,165,167,0,,current,pre,2/2,1,0,0/2,164
+2026-11-26,00:03,key,pivo,1479160,Birell,169,171,0,longtermAction -12%,not linked,pre,2/2,1,0,0/2,168
+2026-11-26,00:03,key,pivo,1462434,Elektrárna,173,175,0,longtermAction -25%,current,pre,2/2,1,0,0/2,172
+2026-11-26,00:03,key,pivo,1457711,Birell,174,176,0,longtermAction -13%,current,pre,2/2,1,0,0/2,173
+2026-11-26,00:03,key,pivo,1442539,Birell,178,180,0,,current,pre,2/2,1,0,0/2,177
+2026-11-26,00:03,key,pivo,1311213,Birell,181,183,0,longtermAction -6%,current,pre,2/2,1,0,0/2,180
+2026-11-26,00:03,key,pivo,1462435,Elektrárna,187,189,0,longtermAction -17%,current,pre,2/2,1,0,0/2,186
+2026-11-26,00:03,key,pivo,1473384,Elektrárna,190,192,0,,current,pre,2/2,1,0,0/2,189
+2026-11-26,00:03,key,pivo,1479158,Birell,191,193,0,longtermAction -3%,not linked,pre,2/2,1,0,0/2,190
+2026-11-26,00:03,key,pivo plech,1320945,Velkopopovický Kozel,25,1,1,longtermAction -3%,not linked,pre,1/2,1,0,0/2,25
+2026-11-26,00:03,key,pivo plech,1455268,Pilsner Urquell,2,3,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,pivo plech,1320947,Pilsner Urquell,,4,1,sale -13%,not linked,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,pivo plech,1457714,Gambrinus,4,6,0,longtermAction -30%,planned,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,pivo plech,1455270,Velkopopovický Kozel,6,8,0,longtermAction -6% + expiration -19%,planned,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,pivo plech,1464715,Radegast,20,22,0,,planned,pre,2/2,1,0,0/2,20
+2026-11-26,00:03,key,pivo plech,1293415,Velkopopovický Kozel,25,1,0,longtermAction -7%,not linked,pre,1/2,1,0,0/2,25
+2026-11-26,00:03,key,pivo plech,1320949,Gambrinus,26,28,0,,not linked,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,pivo plech,1471176,Elektrárna,29,31,0,,not linked,pre,2/2,1,0,0/2,29
+2026-11-26,00:03,key,pivo plech,1479154,Velkopopovický Kozel,30,32,0,,not linked,pre,2/2,1,0,0/2,30
+2026-11-26,00:03,key,pivo plech,1457706,Proud,42,44,0,,not linked,pre,2/2,1,0,0/2,42
+2026-11-26,00:03,key,pivo plech,1320951,Excelent,46,48,0,,not linked,pre,2/2,1,0,0/2,46
+2026-11-26,00:03,key,pivo plech,1457704,Radegast,48,50,0,,not linked,pre,2/2,1,0,0/2,48
+2026-11-26,00:03,key,pivo plech,1462437,Elektrárna,50,52,0,longtermAction -11%,not linked,pre,2/2,1,0,0/2,50
+2026-11-26,00:03,key,pivo plech,1325149,Radegast,52,54,0,,planned,pre,2/2,1,0,0/2,52
+2026-11-26,00:03,key,pivo plech,1471175,Elektrárna,53,55,0,,not linked,pre,2/2,1,0,0/2,53
+2026-11-26,00:03,key,pivo plech,1480131,Proud,57,59,0,longtermAction -21%,not linked,pre,2/2,1,0,0/2,57
+2026-11-26,00:03,key,pivo plech,1442540,Birell,76,78,0,,planned,pre,2/2,1,0,0/2,76
+2026-11-26,00:03,key,pivo plech,1294219,Birell,79,81,0,,not linked,pre,2/2,1,0,0/2,79
+2026-11-26,00:03,key,pivo plech,1479160,Birell,80,82,0,longtermAction -12%,not linked,pre,2/2,1,0,0/2,80
+2026-11-26,00:03,key,pivo plech,1461276,Birell,83,85,0,,planned,pre,2/2,1,0,0/2,83
+2026-11-26,00:03,key,pivo plech,1442539,Birell,85,87,0,,not linked,pre,2/2,1,0,0/2,85
+2026-11-26,00:03,key,pivo plech,1311213,Birell,88,90,0,longtermAction -6%,not linked,pre,2/2,1,0,0/2,88
+2026-11-26,00:03,key,pivo plech,1462439,Elektrárna,93,95,0,longtermAction -28%,not linked,pre,2/2,1,0,0/2,93
+2026-11-26,00:03,key,pivo plech,1464713,Velkopopovický Kozel,97,99,0,longtermAction -5%,not linked,pre,2/2,1,0,0/2,97
+2026-11-26,00:03,key,pivo plech,1479158,Birell,99,101,0,longtermAction -3%,not linked,pre,2/2,1,0,0/2,99
+2026-11-26,00:03,key,pivo plech,1479156,Frisco,103,105,0,longtermAction -13%,not linked,pre,2/2,1,0,0/2,103
+2026-11-26,00:03,key,pivo plech,1461277,Birell,109,111,0,,planned,pre,2/2,1,0,0/2,109
+2026-11-26,00:03,key,pivo plech,1457711,Birell,110,112,0,longtermAction -13%,not linked,pre,2/2,1,0,0/2,110
+2026-11-26,00:03,key,pivo plech,1455271,Frisco,119,121,0,longtermAction -13%,not linked,pre,2/2,1,0,0/2,119
+2026-11-26,00:03,key,pivo plech,1479161,Birell,120,122,0,,not linked,pre,2/2,1,0,0/2,120
+2026-11-26,00:03,key,pivo plech,1479157,Frisco,126,128,0,longtermAction -13%,not linked,pre,2/2,1,0,0/2,126
+2026-11-26,00:03,key,pivo plech,1482160,Velkopopovický Kozel,127,129,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,127
+2026-11-26,00:03,key,pivo plech,1473384,Elektrárna,137,139,0,,not linked,pre,2/2,1,0,0/2,137
+2026-11-26,00:03,key,pivo plech,1479149,Frisco,140,142,0,,not linked,pre,2/2,1,0,0/2,140
+2026-11-26,00:03,key,pivo plech,1479159,Birell,144,146,0,,not linked,pre,2/2,1,0,0/2,144
+2026-11-26,00:03,key,pivo plech,1479155,Frisco,145,147,0,,not linked,pre,2/2,1,0,0/2,145
+2026-11-26,00:03,key,pivo plech,732997,Birell,148,150,0,longtermAction -9%,not linked,pre,2/2,1,0,0/2,148
+2026-11-26,00:03,key,pivo plech,1482158,Velkopopovický Kozel,153,155,0,,not linked,pre,2/2,1,0,0/2,153
+2026-11-26,00:03,key,pivo plech,1455273,Frisco,156,158,0,,not linked,pre,2/2,1,0,0/2,156
+2026-11-26,00:03,key,pivo plech,1438192,Birell,157,159,0,longtermAction -4%,not linked,pre,2/2,1,0,0/2,157
+2026-11-26,00:03,key,pivo plech,1420722,Birell,168,170,0,longtermAction -6%,not linked,pre,2/2,1,0,0/2,168
+2026-11-26,00:03,key,pivo plech,1482159,Velkopopovický Kozel,171,173,0,,not linked,pre,2/2,1,0,0/2,171
+2026-11-26,00:03,key,pivo plech,1469181,Birell,179,181,0,longtermAction -4%,not linked,pre,2/2,1,0,0/2,179
+2026-11-26,00:03,key,pivo plech,1479150,Birell,182,184,0,,not linked,pre,2/2,1,0,0/2,182
+2026-11-26,00:03,key,pivo plech,1469182,Birell,189,191,0,,not linked,pre,2/2,1,0,0/2,189
+2026-11-26,00:03,key,pivo v plechovce,1293415,Velkopopovický Kozel,50,1,1,longtermAction -7%,planned,pre,1/2,1,0,0/2,50
+2026-11-26,00:03,key,pivo v plechovce,1320947,Pilsner Urquell,1,2,0,sale -13%,planned,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,pivo v plechovce,1455268,Pilsner Urquell,2,3,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,pivo v plechovce,1457714,Gambrinus,3,5,0,longtermAction -30%,planned,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,pivo v plechovce,1455270,Velkopopovický Kozel,9,4,0,longtermAction -6% + expiration -19%,planned,pre,1/2,1,0,0/2,8
+2026-11-26,00:03,key,pivo v plechovce,1464715,Radegast,18,20,0,,planned,pre,2/2,1,0,0/2,18
+2026-11-26,00:03,key,pivo v plechovce,1457706,Proud,22,24,0,,current,pre,2/2,1,0,0/2,22
+2026-11-26,00:03,key,pivo v plechovce,1471176,Elektrárna,26,28,0,,not linked,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,pivo v plechovce,1479154,Velkopopovický Kozel,28,30,0,,planned,pre,2/2,1,0,0/2,28
+2026-11-26,00:03,key,pivo v plechovce,1320951,Excelent,20,22,0,,planned,pre,2/2,1,0,0/2,20
+2026-11-26,00:03,key,pivo v plechovce,1471175,Elektrárna,41,43,0,,not linked,pre,2/2,1,0,0/2,41
+2026-11-26,00:03,key,pivo v plechovce,1320949,Gambrinus,48,50,0,,not linked,pre,2/2,1,0,0/2,48
+2026-11-26,00:03,key,pivo v plechovce,1320945,Velkopopovický Kozel,51,53,0,longtermAction -3%,planned,pre,2/2,1,0,0/2,51
+2026-11-26,00:03,key,pivo v plechovce,1462437,Elektrárna,63,65,0,longtermAction -11%,not linked,pre,2/2,1,0,0/2,62
+2026-11-26,00:03,key,pivo v plechovce,1325149,Radegast,66,68,0,,planned,pre,2/2,1,0,0/2,65
+2026-11-26,00:03,key,pivo v plechovce,1479160,Birell,67,69,0,longtermAction -12%,planned,pre,2/2,1,0,0/2,66
+2026-11-26,00:03,key,pivo v plechovce,1480131,Proud,69,71,0,longtermAction -21%,planned,pre,2/2,1,0,0/2,68
+2026-11-26,00:03,key,pivo v plechovce,1479158,Birell,75,77,0,longtermAction -3%,planned,pre,2/2,1,0,0/2,74
+2026-11-26,00:03,key,pivo v plechovce,1442540,Birell,78,80,0,,planned,pre,2/2,1,0,0/2,77
+2026-11-26,00:03,key,pivo v plechovce,1464713,Velkopopovický Kozel,81,83,0,longtermAction -5%,planned,pre,2/2,1,0,0/2,80
+2026-11-26,00:03,key,pivo v plechovce,1479161,Birell,84,86,0,,planned,pre,2/2,1,0,0/2,83
+2026-11-26,00:03,key,pivo v plechovce,1461276,Birell,86,88,0,,planned,pre,2/2,1,0,0/2,85
+2026-11-26,00:03,key,pivo v plechovce,1479150,Birell,93,95,0,,planned,pre,2/2,1,0,0/2,92
+2026-11-26,00:03,key,plzeň,1479160,Birell,20,1,1,longtermAction -12%,not linked,pre,1/2,1,0,0/2,20
+2026-11-26,00:03,key,plzeň,1455268,Pilsner Urquell,1,2,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,plzeň,1320947,Pilsner Urquell,2,3,0,sale -13%,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,plzeň,1479156,Frisco,31,4,1,longtermAction -13%,not linked,pre,1/2,1,0,0/2,31
+2026-11-26,00:03,key,plzeň,734585,Pilsner Urquell,3,5,0,,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,plzeň,1377729,Pilsner Urquell,5,7,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,5
+2026-11-26,00:03,key,plzeň,1442532,Pilsner Urquell,10,12,0,,current,pre,2/2,1,0,0/2,10
+2026-11-26,00:03,key,plzeň,1320999,Radegast,11,13,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,11
+2026-11-26,00:03,key,plzeň,1457708,Proud,12,14,0,longtermAction -6%,not linked,pre,2/2,1,0,0/2,12
+2026-11-26,00:03,key,plzeň,1479151,Velkopopovický Kozel,13,15,0,longtermAction -8%,not linked,pre,2/2,1,0,0/2,13
+2026-11-26,00:03,key,plzeň,1479152,Velkopopovický Kozel,14,1,0,longtermAction -9%,not linked,pre,1/2,1,0,0/2,14
+2026-11-26,00:03,key,plzeň,1479154,Velkopopovický Kozel,14,16,0,,not linked,pre,2/2,1,0,0/2,14
+2026-11-26,00:03,key,plzeň,1457706,Proud,15,17,0,,not linked,pre,2/2,1,0,0/2,15
+2026-11-26,00:03,key,plzeň,1311209,Gambrinus,16,18,0,,not linked,pre,2/2,1,0,0/2,16
+2026-11-26,00:03,key,plzeň,1479158,Birell,21,23,0,longtermAction -3%,not linked,pre,2/2,1,0,0/2,21
+2026-11-26,00:03,key,plzeň,1483039,Elektrárna,22,24,0,,not linked,pre,2/2,1,0,0/2,22
+2026-11-26,00:03,key,plzeň,1462435,Elektrárna,23,25,0,longtermAction -17%,not linked,pre,2/2,1,0,0/2,23
+2026-11-26,00:03,key,plzeň,1483038,Elektrárna,24,26,0,,not linked,pre,2/2,1,0,0/2,24
+2026-11-26,00:03,key,plzeň,1483040,Elektrárna,25,27,0,,not linked,pre,2/2,1,0,0/2,25
+2026-11-26,00:03,key,plzeň,1479161,Birell,26,28,0,,not linked,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,plzeň,1479148,Frisco,27,29,0,longtermAction -14%,not linked,pre,2/2,1,0,0/2,27
+2026-11-26,00:03,key,plzeň,1479159,Birell,28,30,0,,not linked,pre,2/2,1,0,0/2,28
+2026-11-26,00:03,key,plzeň,1462437,Elektrárna,29,31,0,longtermAction -11%,not linked,pre,2/2,1,0,0/2,29
+2026-11-26,00:03,key,plzeň,1482158,Velkopopovický Kozel,30,32,0,,not linked,pre,2/2,1,0,0/2,30
+2026-11-26,00:03,key,plzeň,1480131,Proud,31,33,0,longtermAction -21%,not linked,pre,2/2,1,0,0/2,31
+2026-11-26,00:03,key,plzeň,1479150,Birell,32,34,0,,not linked,pre,2/2,1,0,0/2,32
+2026-11-26,00:03,key,plzeň,1479157,Frisco,33,4,0,longtermAction -13%,not linked,pre,1/2,1,0,0/2,33
+2026-11-26,00:03,key,plzeň,1479149,Frisco,34,36,0,,not linked,pre,2/2,1,0,0/2,34
+2026-11-26,00:03,key,plzeň,1479155,Frisco,35,37,0,,not linked,pre,2/2,1,0,0/2,35
+2026-11-26,00:03,key,plzeň,735393,Velkopopovický Kozel,37,39,0,,not linked,pre,2/2,1,0,0/2,37
+2026-11-26,00:03,key,plzeň,1479153,Frisco,42,44,0,longtermAction -14%,not linked,pre,2/2,0,0,0/2,
+2026-11-26,00:03,key,radegast,1457704,Radegast,1,1,0,,not linked,pre,2/2,1,0,0/2,1
+2026-11-26,00:03,key,radegast,1320999,Radegast,2,2,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,radegast,1464715,Radegast,3,3,0,,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,radegast,1457709,Radegast,4,4,0,longtermAction -10%,current,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,radegast,1455267,Radegast,5,5,0,longtermAction -7%,current,pre,2/2,1,0,0/2,5
+2026-11-26,00:03,key,radegast,1325149,Radegast,6,6,0,,not linked,pre,2/2,1,0,0/2,6
+2026-11-26,00:03,key,radegast,1442533,Radegast,7,7,0,,not linked,pre,2/2,1,0,0/2,7
+2026-11-26,00:03,key,radegast,1325145,Radegast,8,8,0,,current,pre,2/2,1,0,0/2,8
+2026-11-26,00:03,key,radler,1294219,Birell,2,3,0,,current,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,radler,1479158,Birell,,4,1,longtermAction -3%,current,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,radler,732997,Birell,3,5,0,longtermAction -9%,current,pre,2/2,1,0,0/2,3
+2026-11-26,00:03,key,radler,1479150,Birell,12,14,0,,current,pre,2/2,1,0,0/2,12
+2026-11-26,00:03,key,radler,1479160,Birell,23,25,0,longtermAction -12%,planned,pre,2/2,1,0,0/2,23
+2026-11-26,00:03,key,radler,1311213,Birell,26,28,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,radler,1479161,Birell,27,29,0,,planned,pre,2/2,1,0,0/2,27
+2026-11-26,00:03,key,radler,1482160,Velkopopovický Kozel,29,1,0,longtermAction -10%,planned,pre,1/2,1,0,0/2,29
+2026-11-26,00:03,key,radler,1457711,Birell,32,34,0,longtermAction -13%,planned,pre,2/2,1,0,0/2,32
+2026-11-26,00:03,key,radler,1479159,Birell,33,35,0,,planned,pre,2/2,1,0,0/2,33
+2026-11-26,00:03,key,radler,1438192,Birell,34,36,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,34
+2026-11-26,00:03,key,radler,1482158,Velkopopovický Kozel,35,37,0,,planned,pre,2/2,1,0,0/2,35
+2026-11-26,00:03,key,radler,1457708,Proud,36,38,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,36
+2026-11-26,00:03,key,radler,1469181,Birell,38,40,0,longtermAction -4%,planned,pre,2/2,1,0,0/2,38
+2026-11-26,00:03,key,radler,1482159,Velkopopovický Kozel,39,41,0,,planned,pre,2/2,1,0,0/2,39
+2026-11-26,00:03,key,radler,1480131,Proud,40,42,0,longtermAction -21%,planned,pre,2/2,1,0,0/2,40
+2026-11-26,00:03,key,radler,1469182,Birell,41,43,0,,planned,pre,2/2,1,0,0/2,41
+2026-11-26,00:03,key,radler,1420722,Birell,42,44,0,longtermAction -6%,planned,pre,2/2,1,0,0/2,42
+2026-11-26,00:03,key,radler,1457706,Proud,44,46,0,,planned,pre,2/2,1,0,0/2,44
+2026-11-26,00:03,key,světlé pivo,1455270,Velkopopovický Kozel,,1,1,longtermAction -6% + expiration -19%,current,pre,0/2,1,0,0/2,
+2026-11-26,00:03,key,světlé pivo,734585,Pilsner Urquell,2,3,0,,not linked,pre,2/2,1,0,0/2,2
+2026-11-26,00:03,key,světlé pivo,1320947,Pilsner Urquell,4,4,1,sale -13%,not linked,pre,1/2,1,0,0/2,4
+2026-11-26,00:03,key,světlé pivo,1293421,Gambrinus,4,6,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,4
+2026-11-26,00:03,key,světlé pivo,1461276,Birell,17,19,0,,current,pre,2/2,1,0,0/2,17
+2026-11-26,00:03,key,světlé pivo,1464715,Radegast,20,22,0,,current,pre,2/2,1,0,0/2,20
+2026-11-26,00:03,key,světlé pivo,1455268,Pilsner Urquell,23,25,0,longtermAction -7%,not linked,pre,2/2,1,0,0/2,23
+2026-11-26,00:03,key,světlé pivo,1455267,Radegast,27,29,0,longtermAction -7%,current,pre,2/2,1,0,0/2,27
+2026-11-26,00:03,key,světlé pivo,762961,Birell,26,28,0,,not linked,pre,2/2,1,0,0/2,26
+2026-11-26,00:03,key,světlé pivo,1461277,Birell,29,31,0,,current,pre,2/2,1,0,0/2,29
+2026-11-26,00:03,key,světlé pivo,1320959,Primus,30,32,0,,not linked,pre,2/2,1,0,0/2,30
+2026-11-26,00:03,key,světlé pivo,1421860,Peroni,41,43,0,,current,pre,2/2,1,0,0/2,41
+2026-11-26,00:03,key,světlé pivo,1442540,Birell,46,48,0,,not linked,pre,2/2,1,0,0/2,46
+2026-11-26,00:03,key,světlé pivo,1320989,Klasik,28,30,0,,not linked,pre,2/2,1,0,0/2,28
+2026-11-26,00:03,key,světlé pivo,1320945,Velkopopovický Kozel,67,69,0,longtermAction -3%,not linked,pre,2/2,1,0,0/2,67
+2026-11-26,00:03,key,světlé pivo,1377729,Pilsner Urquell,92,94,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,92
+2026-11-26,00:03,key,světlé pivo,1457709,Radegast,93,95,0,longtermAction -10%,not linked,pre,2/2,1,0,0/2,93
+2026-11-26,00:03,key,světlé pivo,1442533,Radegast,99,101,0,,current,pre,2/2,1,0,0/2,99
+2026-11-26,00:03,key,světlé pivo,1320951,Excelent,104,106,0,,not linked,pre,2/2,1,0,0/2,104
+2026-11-26,00:03,key,světlé pivo,1325149,Radegast,111,113,0,,not linked,pre,2/2,1,0,0/2,111
+2026-11-26,00:03,key,světlé pivo,735381,Velkopopovický Kozel,122,124,0,,not linked,pre,2/2,1,0,0/2,122
+2026-11-26,00:03,key,světlé pivo,1325145,Radegast,125,127,0,,not linked,pre,2/2,1,0,0/2,125

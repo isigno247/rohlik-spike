@@ -1,0 +1,36 @@
+{
+ "run": "2026-11-26 00:03 key",
+ "warehouse": 8791,
+ "queries": 21,
+ "searches": 42,
+ "raw_rows": 4497,
+ "incomplete_lists": [],
+ "failed": [],
+ "retried": [],
+ "session_agreement": {
+  "queries": 21,
+  "median_diff": 0,
+  "worst": [
+   [
+    "nealko pivo",
+    1
+   ],
+   [
+    "nealkoholické pivo",
+    1
+   ],
+   [
+    "ochucené pivo",
+    1
+   ],
+   [
+    "pivo",
+    1
+   ],
+   [
+    "světlé pivo",
+    1
+   ]
+  ]
+ }
+}
