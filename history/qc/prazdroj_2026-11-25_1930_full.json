@@ -1,0 +1,43 @@
+{
+ "run": "2026-11-25 19:30 full",
+ "warehouse": 8791,
+ "queries": 634,
+ "searches": 655,
+ "raw_rows": 64345,
+ "incomplete_lists": [
+  "5 l (419/423)",
+  "česká (1981/3753)",
+  "české (1959/3800)",
+  "český (1984/3574)",
+  "grilování (631/634)",
+  "ochucené (1186/1189)"
+ ],
+ "failed": [],
+ "retried": [],
+ "session_agreement": {
+  "queries": 21,
+  "median_diff": 0,
+  "worst": [
+   [
+    "nealko pivo",
+    1
+   ],
+   [
+    "nealkoholické pivo",
+    1
+   ],
+   [
+    "ochucené pivo",
+    1
+   ],
+   [
+    "pivo",
+    1
+   ],
+   [
+    "světlé pivo",
+    1
+   ]
+  ]
+ }
+}
