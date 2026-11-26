@@ -1,0 +1,36 @@
+{
+ "run": "2026-11-26 23:56 key",
+ "warehouse": 8791,
+ "queries": 21,
+ "searches": 42,
+ "raw_rows": 4496,
+ "incomplete_lists": [],
+ "failed": [],
+ "retried": [],
+ "session_agreement": {
+  "queries": 21,
+  "median_diff": 0,
+  "worst": [
+   [
+    "černé pivo",
+    1
+   ],
+   [
+    "pivo plech",
+    1
+   ],
+   [
+    "světlé pivo",
+    1
+   ],
+   [
+    "birell",
+    0
+   ],
+   [
+    "cider",
+    0
+   ]
+  ]
+ }
+}
