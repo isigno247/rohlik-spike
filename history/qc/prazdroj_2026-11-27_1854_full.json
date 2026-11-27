@@ -1,0 +1,43 @@
+{
+ "run": "2026-11-27 18:54 full",
+ "warehouse": 8791,
+ "queries": 634,
+ "searches": 655,
+ "raw_rows": 64198,
+ "incomplete_lists": [
+  "česká (1977/3728)",
+  "české (1973/3777)",
+  "český (1982/3547)",
+  "nápoje (866/869)",
+  "ochucené (1185/1189)",
+  "speciál (555/560)"
+ ],
+ "failed": [],
+ "retried": [],
+ "session_agreement": {
+  "queries": 21,
+  "median_diff": 0,
+  "worst": [
+   [
+    "černé pivo",
+    2
+   ],
+   [
+    "nealko pivo",
+    1
+   ],
+   [
+    "ochucené pivo",
+    1
+   ],
+   [
+    "birell",
+    0
+   ],
+   [
+    "cider",
+    0
+   ]
+  ]
+ }
+}
