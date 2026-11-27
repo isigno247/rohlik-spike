@@ -227,18 +227,24 @@ const baStats = id => {
   const s = {};
   for (const r of posOn(id)) {
     if (r.kw_status === 'not linked') continue;
-    const x = s[r.pid] ??= { neu: new Set(), cur: new Set(), pos: [] };
-    (r.kw_status === 'current' ? x.cur : x.neu).add(r.keyword);
-    const o = num(r.org_pos); if (o != null) x.pos.push(o);
+    const o = num(r.org_pos); if (o == null) continue;          // organic only: shown only as an ad is not coverage
+    const x = s[r.pid] ??= { neu: new Set(), cur: new Set(), pos: {} };
+    if (r.kw_status === 'current') { x.cur.add(r.keyword); continue; }
+    x.neu.add(r.keyword); (x.pos[r.keyword] ??= []).push(o);   // positions on suggested keywords only
   }
   return s;
 };
 const preS = preRuns.map(baStats), postS = postRuns.map(baStats);
 for (const pid of cfg.skuList.map(([p]) => String(p))) {
   const a = assigned[pid] || { cur: 0, neu: 0 };
-  const agg = S => S.length ? [r1(avg(S.map(s => s[pid]?.neu.size || 0))), median(S.flatMap(s => s[pid]?.pos || [])), r1(avg(S.map(s => s[pid]?.cur.size || 0)))] : [null, null, null];
-  const [bNew, bMed, bCur] = agg(preS), [pNew, pMed, pCur] = agg(postS);
-  out.push(['ba', D, pid, a.neu, bNew, pNew, bMed, pMed, a.cur, bCur, pCur]);
+  const cnt = (S, f) => S.length ? r1(avg(S.map(s => s[pid]?.[f].size || 0))) : null;
+  const pairs = S => { const m = {}; S.forEach(s => Object.entries(s[pid]?.pos || {}).forEach(([k, v]) => (m[k] ??= []).push(...v))); return m; };
+  // median position: before go-live all suggested keywords seen; after go-live a stable sample = keywords seen both before and after
+  // (new appearances belong to coverage – mixing them in would worsen the median exactly when the keywords work)
+  const pre = pairs(preS), post = pairs(postS);
+  const stable = postS.length ? Object.keys(post).filter(k => pre[k]) : Object.keys(pre);
+  const bMed = median(stable.flatMap(k => pre[k])), pMed = postS.length ? median(stable.flatMap(k => post[k])) : null;
+  out.push(['ba', D, pid, a.neu, cnt(preS, 'neu'), cnt(postS, 'neu'), bMed, pMed, a.cur, cnt(preS, 'cur'), cnt(postS, 'cur')]);
 }
 out.push(['bag', D, G || '', preRuns.length, postRuns.length]);
 for (const g of cfg.golive || []) out.push(['gl', g.date, (g.keywords || []).length, (g.pids || []).length, g.note || '']);
